@@ -1,4 +1,4 @@
-/**
+﻿/**
  * app.js - 菜农记账 App 主逻辑
  */
 (function() {
@@ -79,6 +79,7 @@ function todayStr() {
   return y + '-' + m + '-' + day;
 }
 
+function copyToClipboard(text) { var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e) {} document.body.removeChild(ta); }
 function showToast(msg) {
   const old = document.querySelector('.toast');
   if (old) old.remove();
@@ -259,7 +260,7 @@ async function saveCurrentOrder() {
 
   try {
     await DB.saveOrder(order);
-    showToast(window._syncOK ? '已保存 ✓' : '已保存(本地 ⚠)');
+    showToast('订单已保存');
     currentItems = [];
     renderItems();
   } catch (err) {
@@ -327,8 +328,20 @@ async function loadHistory(query) {
         '</div>' +
         '<div class="history-group-body" id="' + escHtml(gid) + '">';
 
+      var monthGrps = {};
       group.orders.forEach(function(order) {
-        var itemCount = (order.items || []).length;
+        var ym = (order.date || '').substring(0,7);
+        if (!monthGrps[ym]) monthGrps[ym] = { orders: [], total: 0 };
+        monthGrps[ym].orders.push(order);
+        monthGrps[ym].total += order.grandTotal || 0;
+      });
+      Object.keys(monthGrps).sort().reverse().forEach(function(ym) {
+        var mg = monthGrps[ym];
+        var d = new Date(ym+'-01');
+        var label = d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+        html += '<div class="month-group"><div class="month-header"><span class="month-label">'+label+'</span><span class="month-total">'+fmtNum(mg.total)+'元</span><button class="btn btn-sm btn-success month-share-btn" data-customer="'+escHtml(group.customer)+'" data-month="'+ym+'">分享本月</button></div>';
+        mg.orders.forEach(function(order) {
+          var itemCount = (order.items || []).length;
         html += '<div class="history-card" data-id="' + order.id + '">' +
           '<div class="history-card-header">' +
             '<div>' +
@@ -353,12 +366,14 @@ async function loadHistory(query) {
         '</div>' +
         '</div>' +
         '<div class="history-card-actions">' +
-          '<button class="btn btn-primary detail-btn" data-id="' + order.id + '">展开详情</button>' +
+        '<button class="btn btn-success share-btn" data-customer="' + encodeURIComponent(order.customer) + '" data-date="' + order.date + '">分享</button>' +
+                  '<button class="btn btn-primary detail-btn" data-id="' + order.id + '">展开详情</button>' +
           '<button class="btn btn-danger delete-btn" data-id="' + order.id + '">删除</button>' +
         '</div>' +
       '</div>';
       });
       html += '</div></div>';
+      });
     });
 
     list.innerHTML = html;
@@ -388,7 +403,10 @@ async function loadHistory(query) {
     });
 
     // Delete
-    list.querySelectorAll('.delete-btn').forEach(function(btn) {
+    list.querySelectorAll('.share-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;copyToClipboard(location.origin+location.pathname+'?v='+encodeURIComponent(c)+'&d='+d);showToast('已复制');});});
+list.querySelectorAll('.month-share-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;copyToClipboard(location.origin+location.pathname+'?v='+encodeURIComponent(c)+'&d='+m);showToast('已复制');});});
+
+list.querySelectorAll('.delete-btn').forEach(function(btn) {
       btn.addEventListener('click', async function(e) {
         e.stopPropagation();
         var id = parseInt(e.currentTarget.dataset.id);
@@ -578,7 +596,8 @@ async function loadPreviousItemsFromOrder(orderId) {
   } catch(e) { console.error('loadPreviousItemsFromOrder error:', e); }
 }
 
-function init() {
+async function loadShareView(c,d){try{document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});document.getElementById("page-share").classList.add("active");document.getElementById("bottom-nav").style.display="none";var os=await((d+'').length>7?DB.getCustomerDateOrders(c,d):DB.getCustomerMonthOrders(c,d));var ai=[];var gt=0;os.forEach(function(o){o.items.forEach(function(i){ai.push(i);});gt+=o.grandTotal||0;});document.getElementById('share-customer').textContent=c;document.getElementById('share-date').textContent=d;if(!os||os.length===0){document.getElementById('share-items-body').innerHTML='<tr><td colspan=4 style=text-align:center;color:#999>无数据</td></tr>';document.getElementById('share-total').textContent='0.00';return;}var h='';if((d+'').length>7){ai.forEach(function(i){h+='<tr><td>'+(i.name||'')+'</td><td>'+fmtNum(i.weight)+'</td><td>'+fmtNum(i.unitPrice)+'</td><td>'+fmtNum(i.total)+'</td></tr>';});}else{var dg={};os.forEach(function(o){var dt=o.date||'';if(!dg[dt])dg[dt]={items:[],total:0};(o.items||[]).forEach(function(it){dg[dt].items.push(it);dg[dt].total+=it.total||0;});});Object.keys(dg).sort().forEach(function(dt){h+='<tr class=x-date-h><td colspan=4>'+dt+'</td></tr>';dg[dt].items.forEach(function(it){h+='<tr><td>'+(it.name||'')+'</td><td>'+fmtNum(it.weight)+'</td><td>'+fmtNum(it.unitPrice)+'</td><td>'+fmtNum(it.total)+'</td></tr>';});h+='<tr class=x-date-sub><td colspan=3>小计</td><td>'+fmtNum(dg[dt].total)+'</td></tr>';});}document.getElementById('share-items-body').innerHTML=h||'<tr><td colspan=4>-</td></tr>';document.getElementById('share-total').textContent=gt.toFixed(2);}catch(e){document.getElementById('share-date').textContent='错误:'+e.message;}}
+function init(){var _p=new URLSearchParams(location.search);if(_p.get('v')&&_p.get('d')){loadShareView(_p.get('v'),_p.get('d'));return;}
   // 设置日期
   dom.inputDate.value = todayStr();
   loadCustomerAutocomplete();
