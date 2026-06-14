@@ -1,4 +1,4 @@
-/* ============ Reset & Base ============ */
+﻿/* ============ Reset & Base ============ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -777,3 +777,14 @@ input:focus, button:focus { outline: none; }
   #app { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
   #bottom-nav { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
 }
+
+/* Password screen */
+#password-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#2E7D32;z-index:9999;display:flex;align-items:center;justify-content:center;}
+#password-screen .pwd-box{background:#fff;border-radius:12px;padding:36px 28px 28px;width:280px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.15);}
+#password-screen .pwd-title{font-size:22px;color:#2E7D32;margin:0 0 6px;}
+#password-screen .pwd-hint{color:#888;font-size:14px;margin:0 0 24px;}
+#password-screen #pwd-input{width:120px;padding:10px;font-size:20px;text-align:center;border:2px solid #ddd;border-radius:8px;outline:none;letter-spacing:8px;display:block;margin:0 auto 16px;}
+#password-screen #pwd-input:focus{border-color:#2E7D32;}
+#password-screen .pwd-btn{background:#2E7D32;color:#fff;border:none;border-radius:8px;padding:10px 40px;font-size:15px;cursor:pointer;display:block;margin:0 auto;}
+#password-screen .pwd-btn:active{background:#1b5e20;}
+#password-screen .pwd-error{color:#e74c3c;font-size:13px;display:none;margin:12px 0 0;}
