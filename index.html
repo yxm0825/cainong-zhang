@@ -159,7 +159,22 @@
      </div>
    </main>
 
-   <!-- ============ Bottom Navigation ============ -->
+   
+  <main id="page-share" class="page">
+    <div class="share-receipt">
+      <div class="share-header">
+        <h2 id="share-customer">-</h2>
+        <p id="share-date">-</p>
+      </div>
+      <table class="share-items">
+        <thead><tr><th>品名</th><th class="num">重量</th><th>单价</th><th>金额</th></tr></thead>
+        <tbody id="share-items-body"></tbody>
+      </table>
+      <div class="share-total-row">合计：¥<span id="share-total">0.00</span></div>
+      <div class="share-footer">菜农记账</div>
+    </div>
+  </main>
+<!-- ============ Bottom Navigation ============ -->
   <nav id="bottom-nav">
     <button class="nav-item active" data-page="order">
       <span class="nav-icon">📝</span>
@@ -224,10 +239,13 @@
     <div class="modal-body" id="detail-body">
     </div>
   </div>
+    <div style="padding:10px 16px;border-top:1px solid #eee;">
+      <button class="btn btn-primary" id="btn-share-order" style="width:100%">分享给客户</button>
+    </div>
 </div>
 
 <script>
-(function(){var h="0581fd688d7aee6463c55b053661a94bdc4badef25a23514cfe2621397012f35";var s=document.getElementById("password-screen");var i=document.getElementById("pwd-input");var e=document.getElementById("pwd-error");var b=document.getElementById("pwd-btn");if(localStorage.getItem("ca")===h){s.style.display="none";return;}function chk(){var v=i.value;if(v.length!==4)return;crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(buf){var a=Array.from(new Uint8Array(buf)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");if(a===h){localStorage.setItem("ca",h);s.style.display="none";}else{e.style.display="block";i.value="";i.focus();setTimeout(function(){e.style.display="none";},2000);}});}i.addEventListener("keypress",function(ev){if(ev.key==="Enter")chk();});b.addEventListener("click",chk);i.focus();})();
+(function(){var h="0581fd688d7aee6463c55b053661a94bdc4badef25a23514cfe2621397012f35";var s=document.getElementById("password-screen");var i=document.getElementById("pwd-input");var e=document.getElementById("pwd-error");var b=document.getElementById("pwd-btn");if(new URLSearchParams(location.search).get("v")||localStorage.getItem("ca")===h){s.style.display="none";return;}function chk(){var v=i.value;if(v.length!==4)return;crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(buf){var a=Array.from(new Uint8Array(buf)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");if(a===h){localStorage.setItem("ca",h);s.style.display="none";}else{e.style.display="block";i.value="";i.focus();setTimeout(function(){e.style.display="none";},2000);}});}i.addEventListener("keypress",function(ev){if(ev.key==="Enter")chk();});b.addEventListener("click",chk);i.focus();})();
 </script>
     <script src="js/db.js"></script>
 <script src="js/app.js"></script>
