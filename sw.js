@@ -1,4 +1,4 @@
-const CACHE_NAME = 'veggie-ledger-v2';
+﻿const CACHE_NAME = 'veggie-ledger-v3';
 const ASSETS = [
   '.',
   'index.html',
