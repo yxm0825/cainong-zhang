@@ -21,7 +21,7 @@ function openDB() {
 }
 
 async function saveOrder(order) {
-  await supabaseSaveOrder(order);
+  try { await supabaseSaveOrder(order); window._syncOK = true; } catch(e) { window._syncOK = false; console.warn("Supabase:", e.message); }
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -34,7 +34,7 @@ async function saveOrder(order) {
 }
 
 async function getAllOrders() {
-  var co = await supabaseGetOrders(); if (co.length > 0) return co;
+  try { var co = await supabaseGetOrders(); if (co.length > 0) return co; } catch(e) { console.warn("Supabase:", e.message); }
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
