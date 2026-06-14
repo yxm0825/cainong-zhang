@@ -788,3 +788,19 @@ input:focus, button:focus { outline: none; }
 #password-screen .pwd-btn{background:#2E7D32;color:#fff;border:none;border-radius:8px;padding:10px 40px;font-size:15px;cursor:pointer;display:block;margin:0 auto;}
 #password-screen .pwd-btn:active{background:#1b5e20;}
 #password-screen .pwd-error{color:#e74c3c;font-size:13px;display:none;margin:12px 0 0;}
+/* Share view */
+#page-share{padding:16px;background:#f5f5f5;min-height:100vh;box-sizing:border-box;}
+.share-receipt{background:#fff;border-radius:8px;padding:20px 16px;box-shadow:0 1px 4px rgba(0,0,0,.1);max-width:420px;margin:0 auto;}
+.share-header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #2E7D32;}
+.share-header h2{font-size:20px;color:#333;margin:0;}
+.share-header p{font-size:14px;color:#999;margin:4px 0 0;}
+.share-items{width:100%;border-collapse:collapse;font-size:14px;}
+.share-items th{padding:8px 4px;border-bottom:2px solid #2E7D32;text-align:left;}
+.share-items th.num{text-align:center;}
+.share-items td{padding:6px 4px;border-bottom:1px solid #eee;}
+.share-total-row{text-align:right;padding:12px 4px;font-size:16px;font-weight:bold;color:#2E7D32;}
+.share-footer{text-align:center;padding:20px 0;font-size:12px;color:#bbb;}
+
+.x-date-h td{font-weight:600;color:#2E7D32;padding:10px 4px 4px;border-bottom:none!important;font-size:14px;background:#f5faf5;}
+.x-date-sub td{padding:2px 4px 10px;border-bottom:1px solid #eee!important;text-align:right;font-size:13px;color:#666;}
+.x-date-sub td:last-child{font-weight:600;}
