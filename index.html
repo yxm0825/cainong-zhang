@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2E7D32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="菜农记账">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>菜农记账</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header id="app-header">
+    <h1 id="header-title">当前订单</h1>
+  </header>
+
+  <!-- ============ Page: 当前订单 ============ -->
+  <main id="page-order" class="page active">
+    <!-- Order info -->
+    <section class="order-info">
+      <div class="info-row">
+         <label>客户</label>
+          <input type="text" id="input-customer" value="酒店" placeholder="输入客户名称" list="customer-list" autocomplete="off">
+      </div>
+      <div class="info-row">
+        <label>日期</label>
+        <input type="date" id="input-date">
+      </div>
+    </section>
+
+   <!-- Items list -->
+    <datalist id="customer-list"></datalist>
+
+    <div class="load-suggestion" id="load-suggestion" style="display:none">
+      <div class="suggestion-text">
+        <span class="suggestion-icon">📋</span>
+        <span id="suggestion-text">检测到该客户的上次订单记录</span>
+      </div>
+      <div class="suggestion-actions">
+        <button class="btn btn-primary btn-sm" id="btn-load-items">沿用蔬菜和单价</button>
+        <button class="btn btn-cancel btn-sm" id="btn-dismiss-suggestion">不用</button>
+      </div>
+    </div>
+
+    <section class="items-section">
+      <div class="section-header">
+        <span class="section-title">蔬菜清单</span>
+        <span class="item-count" id="item-count">0 项</span>
+      </div>
+      <div id="items-list">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>还没有添加蔬菜</p>
+          <p class="empty-hint">点击下方按钮添加</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Total -->
+    <section class="total-section">
+      <div class="total-row">
+        <span class="total-label">总计</span>
+        <span class="total-amount" id="grand-total">0.00</span>
+        <span class="total-unit">元</span>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="order-actions">
+      <button class="btn btn-primary" id="btn-add-item">
+        <span class="btn-icon">+</span> 添加蔬菜
+      </button>
+      <button class="btn btn-success" id="btn-save-order">
+        💾 保存订单
+      </button>
+    </div>
+  </main>
+
+  <!-- ============ Page: 历史记录 ============ -->
+  <main id="page-history" class="page">
+    <section class="search-section">
+      <div class="search-row">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="history-search" placeholder="搜索日期或客户名...">
+      </div>
+    </section>
+    <section class="history-list" id="history-list">
+      <div class="empty-state">
+        <div class="empty-icon">📜</div>
+        <p>还没有历史记录</p>
+        <p class="empty-hint">保存订单后将在这里显示</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ Page: 统计 ============ -->
+  <main id="page-stats" class="page">
+    <section class="stats-summary">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-order-count">0</div>
+        <div class="stat-label">总订单数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total-amount">0.00</div>
+        <div class="stat-label">总金额 (元)</div>
+      </div>
+    </section>
+    <section class="stats-rankings">
+      <div class="section-header">
+        <span class="section-title">蔬菜销量排行</span>
+      </div>
+      <div id="rankings-list">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <p>暂无数据</p>
+        </div>
+      </div>
+    </section>
+    <input type="file" id="file-input" accept=".json" style="display:none">
+
+    <section class="data-section">
+      <div class="section-header">
+        <span class="section-title">数据管理</span>
+      </div>
+      <div class="data-actions">
+        <button class="btn btn-primary" id="btn-export-data">📤 导出数据</button>
+        <button class="btn btn-success" id="btn-import-data">📥 导入数据</button>
+      </div>
+      <p class="data-hint">导出的文件可通过微信发送，在另一台手机上导入</p>
+    </section>
+
+     <div class="data-section sync-section">
+       <div class="section-header">
+         <span class="section-title">云端同步</span>
+         <span id="sync-status" class="sync-badge">未连接</span>
+       </div>
+       <div class="data-actions">
+         <div class="sync-url-row">
+           <input type="text" id="sync-server-url" value="Supabase 已配置" readonly>
+           <button class="btn btn-primary btn-sm" id="btn-test-sync">测试</button>
+         </div>
+         <div class="sync-info" id="sync-info">连接 Supabase 云端数据库</div>
+       </div>
+     </div>
+   </main>
+
+   <!-- ============ Bottom Navigation ============ -->
+  <nav id="bottom-nav">
+    <button class="nav-item active" data-page="order">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">当前订单</span>
+    </button>
+    <button class="nav-item" data-page="history">
+      <span class="nav-icon">📜</span>
+      <span class="nav-label">历史记录</span>
+    </button>
+    <button class="nav-item" data-page="stats">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">统计</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============ Modal: 添加蔬菜 ============ -->
+<div id="modal-add-item" class="modal-overlay" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>添加蔬菜</h2>
+      <button class="modal-close" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>蔬菜名称</label>
+        <input type="text" id="input-veg-name" placeholder="输入蔬菜名称" autocomplete="off">
+      </div>
+      <div class="preset-veggies" id="preset-veggies">
+        <!-- Populated by JS -->
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label>重量（斤）</label>
+          <input type="number" id="input-weight" placeholder="0.00" step="0.1" min="0">
+        </div>
+        <div class="form-group half">
+          <label>单价（元/斤）</label>
+          <input type="number" id="input-price" placeholder="0.00" step="0.1" min="0">
+        </div>
+      </div>
+      <div class="calc-preview">
+        <span>小计：</span>
+        <span class="calc-amount" id="calc-subtotal">0.00</span>
+        <span>元</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="btn-cancel-add">取消</button>
+      <button class="btn btn-primary" id="btn-confirm-add">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: 订单详情 ============ -->
+<div id="modal-order-detail" class="modal-overlay" style="display:none">
+  <div class="modal-content modal-detail">
+    <div class="modal-header">
+      <h2>订单详情</h2>
+      <button class="modal-close" id="modal-detail-close">&times;</button>
+    </div>
+    <div class="modal-body" id="detail-body">
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
