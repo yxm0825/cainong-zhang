@@ -259,7 +259,7 @@ async function saveCurrentOrder() {
 
   try {
     await DB.saveOrder(order);
-    showToast('订单已保存');
+    showToast(window._syncOK ? '已保存 ✓' : '已保存(本地 ⚠)');
     currentItems = [];
     renderItems();
   } catch (err) {
