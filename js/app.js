@@ -79,7 +79,7 @@ function todayStr() {
   return y + '-' + m + '-' + day;
 }
 
-function copyToClipboard(text) { if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).catch(function(){fc(text);});}else{fc(text);}function fc(t){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='0';ta.style.top='0';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);} }
+async function copyToClipboard(text){try{await navigator.clipboard.writeText(text);return true;}catch(e){}try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='0';ta.style.top='0';document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand('copy');document.body.removeChild(ta);if(ok)return true;}catch(e){}showToast('复制失败：浏览器不支持');return false;}
 function showToast(msg) {
   const old = document.querySelector('.toast');
   if (old) old.remove();
@@ -403,8 +403,8 @@ async function loadHistory(query) {
     });
 
     // Delete
-    list.querySelectorAll('.share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;try{var os=await DB.getCustomerDateOrders(c,d);copyToClipboard(fmtShare(os));}catch(e){showToast('复制失败')};});});
-list.querySelectorAll('.month-share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;try{var os=await DB.getCustomerMonthOrders(c,m);copyToClipboard(fmtMonth(os,m));}catch(e){showToast('复制失败')};});});
+    list.querySelectorAll('.share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;try{var os=await DB.getCustomerDateOrders(c,d);if(await copyToClipboard(fmtShare(os))){showToast('已复制');}}catch(e){showToast('失败:'+e.message)};});});
+list.querySelectorAll('.month-share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;try{var os=await DB.getCustomerMonthOrders(c,m);if(await copyToClipboard(fmtMonth(os,m))){showToast('已复制');}}catch(e){showToast('失败:'+e.message)};});});
 
 list.querySelectorAll('.delete-btn').forEach(function(btn) {
       btn.addEventListener('click', async function(e) {
