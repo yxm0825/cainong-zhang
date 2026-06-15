@@ -5,12 +5,7 @@
 'use strict';
 
 // ==================== 数据 ====================
-const PRESET_VEGGIES = [
-  ,'土豆','西红柿','黄瓜','茄子','青椒','豆角',
-  '菠菜','油菜','芹菜','韭菜','冬瓜','南瓜','萝卜',
-  '胡萝卜','大葱','生姜','大蒜','生菜','空心菜',
-  '油麦菜','菜心','西兰花','花菜'
-];
+const PRESET_VEGGIES = [];
 
 let currentItems = [];
 let editingIndex = -1; // -1 means not editing, >=0 means editing item at this index
