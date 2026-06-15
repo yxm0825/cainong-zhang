@@ -79,7 +79,7 @@ function todayStr() {
   return y + '-' + m + '-' + day;
 }
 
-async function copyToClipboard(text){try{await navigator.clipboard.writeText(text);return true;}catch(e){}try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='0';ta.style.top='0';document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand('copy');document.body.removeChild(ta);if(ok)return true;}catch(e){}showToast('复制失败：浏览器不支持');return false;}
+async function copyToClipboard(text){try{await navigator.clipboard.writeText(text);return true;}catch(e){}try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='0';ta.style.top='0';document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand('copy');document.body.removeChild(ta);if(ok)return true;}catch(e){}try{var tv=document.createElement('textarea');tv.value=text;tv.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:200px;font-size:14px;z-index:20000;padding:8px;border:2px solid #2E7D32;border-radius:8px;background:#fff;resize:none;';tv.readOnly=true;document.body.appendChild(tv);tv.focus();tv.select();showToast('文字已显示，请手动选择复制');return false;}catch(e){}showToast('复制失败');return false;}
 function showToast(msg) {
   const old = document.querySelector('.toast');
   if (old) old.remove();
