@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'veggie-ledger-v3';
+﻿const CACHE_NAME = 'veggie-ledger-v4';
 const ASSETS = [
   '.',
   'index.html',
@@ -45,11 +45,10 @@ self.addEventListener('fetch', (event) => {
         });
         return response;
       }).catch(() => {
-        // 离线时返回缓存的页面
         if (event.request.mode === 'navigate') {
           return caches.match('index.html');
         }
-        return new Response('离线', { status: 503 });
+        return new Response('��', { status: 503 });
       });
     })
   );
