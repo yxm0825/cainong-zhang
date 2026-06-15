@@ -339,7 +339,7 @@ async function loadHistory(query) {
         var mg = monthGrps[ym];
         var d = new Date(ym+'-01');
         var label = d.getFullYear()+'年'+(d.getMonth()+1)+'月';
-        html += '<div class="month-group"><div class="month-header"><span class="month-label">'+label+'</span><span class="month-total">'+fmtNum(mg.total)+'元</span><button class="btn btn-sm btn-success month-share-btn" data-customer="'+escHtml(group.customer)+'" data-month="'+ym+'">分享本月</button></div>';
+        html += '<div class="month-group"><div class="month-header"><span class="month-label">'+label+'</span><span class="month-total">'+fmtNum(mg.total)+'元</span><button class="btn btn-sm btn-success month-share-btn" data-customer="'+escHtml(group.customer)+'" data-month="'+ym+'">复制本月</button></div>';
         mg.orders.forEach(function(order) {
           var itemCount = (order.items || []).length;
         html += '<div class="history-card" data-id="' + order.id + '">' +
@@ -366,7 +366,7 @@ async function loadHistory(query) {
         '</div>' +
         '</div>' +
         '<div class="history-card-actions">' +
-        '<button class="btn btn-success share-btn" data-customer="' + encodeURIComponent(order.customer) + '" data-date="' + order.date + '">分享</button>' +
+        '<button class="btn btn-success share-btn" data-customer="' + encodeURIComponent(order.customer) + '" data-date="' + order.date + '">复制</button>' +
                   '<button class="btn btn-primary detail-btn" data-id="' + order.id + '">展开详情</button>' +
           '<button class="btn btn-danger delete-btn" data-id="' + order.id + '">删除</button>' +
         '</div>' +
@@ -403,8 +403,8 @@ async function loadHistory(query) {
     });
 
     // Delete
-    list.querySelectorAll('.share-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;copyToClipboard(location.origin+location.pathname+'?v='+encodeURIComponent(c)+'&d='+d);showToast('已复制');});});
-list.querySelectorAll('.month-share-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;copyToClipboard(location.origin+location.pathname+'?v='+encodeURIComponent(c)+'&d='+m);showToast('已复制');});});
+    list.querySelectorAll('.share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;try{var os=await DB.getCustomerDateOrders(c,d);copyToClipboard(fmtShare(os));}catch(e){showToast('复制失败')};});});
+list.querySelectorAll('.month-share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;try{var os=await DB.getCustomerMonthOrders(c,m);copyToClipboard(fmtMonth(os,m));}catch(e){showToast('复制失败')};});});
 
 list.querySelectorAll('.delete-btn').forEach(function(btn) {
       btn.addEventListener('click', async function(e) {
@@ -597,6 +597,11 @@ async function loadPreviousItemsFromOrder(orderId) {
 }
 
 async function loadShareView(c,d){try{document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});document.getElementById("page-share").classList.add("active");document.getElementById("bottom-nav").style.display="none";var os=await((d+'').length>7?DB.getCustomerDateOrders(c,d):DB.getCustomerMonthOrders(c,d));var ai=[];var gt=0;os.forEach(function(o){o.items.forEach(function(i){ai.push(i);});gt+=o.grandTotal||0;});document.getElementById('share-customer').textContent=c;document.getElementById('share-date').textContent=d;if(!os||os.length===0){document.getElementById('share-items-body').innerHTML='<tr><td colspan=4 style=text-align:center;color:#999>无数据</td></tr>';document.getElementById('share-total').textContent='0.00';return;}var h='';if((d+'').length>7){ai.forEach(function(i){h+='<tr><td>'+(i.name||'')+'</td><td>'+fmtNum(i.weight)+'</td><td>'+fmtNum(i.unitPrice)+'</td><td>'+fmtNum(i.total)+'</td></tr>';});}else{var dg={};os.forEach(function(o){var dt=o.date||'';if(!dg[dt])dg[dt]={items:[],total:0};(o.items||[]).forEach(function(it){dg[dt].items.push(it);dg[dt].total+=it.total||0;});});Object.keys(dg).sort().forEach(function(dt){h+='<tr class=x-date-h><td colspan=4>'+dt+'</td></tr>';dg[dt].items.forEach(function(it){h+='<tr><td>'+(it.name||'')+'</td><td>'+fmtNum(it.weight)+'</td><td>'+fmtNum(it.unitPrice)+'</td><td>'+fmtNum(it.total)+'</td></tr>';});h+='<tr class=x-date-sub><td colspan=3>小计</td><td>'+fmtNum(dg[dt].total)+'</td></tr>';});}document.getElementById('share-items-body').innerHTML=h||'<tr><td colspan=4>-</td></tr>';document.getElementById('share-total').textContent=gt.toFixed(2);}catch(e){document.getElementById('share-date').textContent='错误:'+e.message;}}
+
+function padR(s,n){s=String(s);while(s.length<n)s+=' ';return s;}
+function padL(s,n){s=String(s);while(s.length<n)s=' '+s;return s;}
+function fmtShare(os){if(!os||!os.length)return'';var o=os[0],c=o.customer||'',d=o.date||'';var ls=['\u2501\u2501 '+c+'  '+d+' \u2501\u2501',''];var gt=0;os.forEach(function(od){(od.items||[]).forEach(function(it){var t=it.total||0;ls.push(padR(it.name||'',10)+'  '+padL(fmtNum(it.weight),5)+'\u65a4  '+padL(fmtNum(it.unitPrice),5)+'\u5143  '+padL(fmtNum(t),6)+'\u5143');gt+=t;});});ls.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');ls.push('\u5408\u8ba1\uff1a'+fmtNum(gt)+'\u5143');ls.push('');ls.push('\u2500\u2500 \u83dc\u519c\u8bb0\u8d26 \u2500\u2500');return ls.join('\n');}
+function fmtMonth(os,m){if(!os||!os.length)return'';var c=os[0].customer||'',y=m.substring(0,4),mm=parseInt(m.substring(5,7));var ls=['\u2501\u2501 '+c+'  '+y+'\u5e74'+mm+'\u6708 \u2501\u2501',''];var gt=0;os.forEach(function(od){var dt=od.date||'';ls.push('\u25c6 '+dt);var ot=0;(od.items||[]).forEach(function(it){var t=it.total||0;ls.push('  '+padR(it.name||'',8)+'  '+padL(fmtNum(it.weight),4)+'\u65a4  '+padL(fmtNum(it.unitPrice),4)+'\u5143  '+padL(fmtNum(t),5)+'\u5143');ot+=t;});ls.push('  \u2500\u2500 \u5c0f\u8ba1 '+fmtNum(ot)+'\u5143');gt+=ot;});ls.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');ls.push('\u5408\u8ba1\uff1a'+fmtNum(gt)+'\u5143');ls.push('');ls.push('\u2500\u2500 \u83dc\u519c\u8bb0\u8d26 \u2500\u2500');return ls.join('\n');}
 function init(){var _p=new URLSearchParams(location.search);if(_p.get('v')&&_p.get('d')){loadShareView(_p.get('v'),_p.get('d'));return;}
   // 设置日期
   dom.inputDate.value = todayStr();
