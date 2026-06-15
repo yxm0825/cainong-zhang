@@ -79,7 +79,7 @@ function todayStr() {
   return y + '-' + m + '-' + day;
 }
 
-function copyToClipboard(text) { var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e) {} document.body.removeChild(ta); }
+function copyToClipboard(text) { if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).catch(function(){fc(text);});}else{fc(text);}function fc(t){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='0';ta.style.top='0';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);} }
 function showToast(msg) {
   const old = document.querySelector('.toast');
   if (old) old.remove();
