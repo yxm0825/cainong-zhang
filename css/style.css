@@ -804,3 +804,21 @@ input:focus, button:focus { outline: none; }
 .x-date-h td{font-weight:600;color:#2E7D32;padding:10px 4px 4px;border-bottom:none!important;font-size:14px;background:#f5faf5;}
 .x-date-sub td{padding:2px 4px 10px;border-bottom:1px solid #eee!important;text-align:right;font-size:13px;color:#666;}
 .x-date-sub td:last-child{font-weight:600;}
+
+/* ============ Stats Filter ============ */
+.stats-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.filter-btn{padding:6px 14px;border:1.5px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}.filter-btn.active{background:var(--green-800);color:#fff;border-color:var(--green-800)}.custom-range{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}.custom-range input[type="date"]{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:14px;background:var(--card)}.custom-range span{color:var(--text-secondary);font-size:14px}
+
+/* ============ Year/Month Group ============ */
+.year-group{border-left:3px solid var(--green-100);margin-left:8px;margin-bottom:4px}.year-header{display:flex;align-items:center;padding:8px 12px;cursor:pointer;transition:background .2s;-webkit-tap-highlight-color:transparent}.year-toggle{font-size:12px;margin-right:8px;color:var(--green-700);width:16px;text-align:center}.year-label{flex:1;font-weight:600;font-size:14px;color:var(--green-800)}.year-stats{font-size:12px;color:var(--text-secondary)}.year-body{padding-left:8px}
+
+/* ============ Month Group ============ */
+.month-group{border-left:2px solid var(--green-50);margin-left:12px;margin-bottom:4px;overflow:hidden}.month-header{display:flex;align-items:center;padding:8px 12px;cursor:pointer;background:#f8faf8;transition:background .2s;-webkit-tap-highlight-color:transparent}.month-toggle{font-size:12px;margin-right:8px;color:var(--green-600);width:16px;text-align:center;flex-shrink:0}.month-body{display:none}
+
+/* ============ Recent Section ============ */
+.recent-section{background:#FFFDE7;border:1px solid #FFF9C4;border-radius:var(--radius-sm);margin:8px;overflow:hidden}.recent-label{padding:8px 12px;font-size:13px;font-weight:600;color:#795548;background:#FFF8E1;border-bottom:1px solid #FFF9C4}.recent-section .history-card{margin:0;border-radius:0;box-shadow:none}
+
+/* ============ Edit Button ============ */
+.btn-warning{background:#FFF3E0;color:#E65100;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:14px;cursor:pointer;transition:background .2s;-webkit-tap-highlight-color:transparent}
+
+/* ============ Edit Modal ============ */
+.modal-edit{max-width:460px;width:95%;max-height:90vh;overflow-y:auto}.edit-item-row{display:flex;align-items:center;gap:4px;margin-bottom:6px;padding:4px;background:#FAFAFA;border-radius:6px}.edit-item-row input{border:1.5px solid var(--border);border-radius:4px;padding:6px 4px;font-size:13px;background:white}.edit-item-sub{font-weight:600;color:var(--green-800);font-size:13px;min-width:55px;text-align:right}.btn-edit-del{background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:4px 6px}.edit-add-row{display:flex;align-items:center;gap:4px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}.edit-add-row input{border:1.5px solid var(--border);border-radius:4px;padding:6px 4px;font-size:13px;background:white}

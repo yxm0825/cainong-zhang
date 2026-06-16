@@ -55,6 +55,8 @@ async function getOrdersByDateRange(dateFrom, dateTo) {
   return all.filter(o => o.date >= dateFrom && o.date <= dateTo);
 }
 
+async function updateOrder(order) { try { await supabaseUpdateOrder(order); } catch(e) { console.warn("Supabase update:", e.message); } var db = await openDB(); return new Promise(function(resolve, reject) { var tx = db.transaction(STORE_NAME, "readwrite"); var store = tx.objectStore(STORE_NAME); var req = store.put(order); req.onsuccess = function() { resolve(req.result); }; req.onerror = function() { reject(req.error); }; tx.oncomplete = function() { db.close(); }; }); }
+
 async function deleteOrder(id) {
   try { await supabaseDeleteOrder(id); } catch(e) { console.warn("Supabase:", e.message); }
   const db = await openDB();
@@ -98,7 +100,7 @@ async function searchOrders(query) {
   );
 }
 
-window.DB = { saveOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders };
+window.DB = { saveOrder, updateOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders };
 async function getLastOrderByCustomer(customerName) {
   const all = await getAllOrders();
   const orders = all.filter(o => o.customer === customerName);
@@ -129,6 +131,7 @@ async function supabaseFetch(method, path, body) {
 function orderToRow(o) { return { customer: o.customer, date: o.date, items: o.items, grand_total: o.grandTotal, created_at: o.createdAt }; }
 function rowToOrder(r) { return { id: r.id, customer: r.customer, date: r.date, items: r.items, grandTotal: r.grand_total, createdAt: r.created_at }; }
 async function supabaseSaveOrder(order) { var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; }
+async function supabaseUpdateOrder(order) { await supabaseFetch("PATCH", "orders?id=eq." + order.id, orderToRow(order)); }
 async function supabaseGetOrders() { var rows = await supabaseFetch("GET", "orders?select=*&order=created_at.desc"); return (rows || []).map(rowToOrder); }
 
 async function supabaseGetCustomerDateOrders(customer, date) {
@@ -158,4 +161,5 @@ async function supabaseDeleteOrder(id) { await supabaseFetch("DELETE", "orders?i
 async function supabaseTest() { try { await supabaseFetch("GET", "orders?select=count&limit=1"); return true; } catch(e) { return false; } }
 window.Sync = { supabaseSaveOrder, supabaseGetOrders, supabaseDeleteOrder, supabaseTest };
 
-window.DB = { saveOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders, getLastOrderByCustomer, getCustomerNames, getCustomerDateOrders, getCustomerMonthOrders };
+window.DB = { saveOrder, updateOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders, getLastOrderByCustomer, getCustomerNames, getCustomerDateOrders, getCustomerMonthOrders };
+

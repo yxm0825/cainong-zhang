@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>菜农记账</title>
+<meta name="version" content="v7">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -110,6 +111,21 @@
 
   <!-- ============ Page: 统计 ============ -->
   <main id="page-stats" class="page">
+    <section class="stats-filter">
+      <button class="filter-btn active" data-filter="all">全部</button>
+      <button class="filter-btn" data-filter="today">今日</button>
+      <button class="filter-btn" data-filter="week">本周</button>
+      <button class="filter-btn" data-filter="month">本月</button>
+      <button class="filter-btn" data-filter="quarter">本季</button>
+      <button class="filter-btn" data-filter="year">本年</button>
+      <button class="filter-btn" data-filter="custom">自定义</button>
+    </section>
+    <section class="custom-range" id="custom-range" style="display:none">
+      <input type="date" id="filter-date-from">
+      <span>至</span>
+      <input type="date" id="filter-date-to">
+      <button class="btn btn-primary btn-sm" id="btn-filter-apply">应用</button>
+    </section>
     <section class="stats-summary">
       <div class="stat-card">
         <div class="stat-number" id="stat-order-count">0</div>
@@ -244,6 +260,32 @@
     </div>
 </div>
 
+
+<!-- ============ Modal: 编辑订单 ============ -->
+<div id="modal-edit-order" class="modal-overlay" style="display:none">
+  <div class="modal-content modal-edit">
+    <div class="modal-header">
+      <h2>修改订单</h2>
+      <button class="modal-close" id="modal-edit-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>客户</label><input type="text" id="edit-customer" placeholder="客户名称"></div>
+      <div class="form-group"><label>日期</label><input type="date" id="edit-date"></div>
+      <div class="form-group"><label>蔬菜清单</label><div id="edit-items-list"></div></div>
+      <div class="edit-add-row">
+        <input type="text" id="edit-new-name" placeholder="蔬菜名">
+        <input type="number" id="edit-new-weight" placeholder="斤" step="0.1" min="0" style="width:60px">
+        <input type="number" id="edit-new-price" placeholder="单价" step="0.1" min="0" style="width:70px">
+        <button class="btn btn-primary btn-sm" id="btn-edit-add-item">+</button>
+      </div>
+      <div class="calc-preview"><span>合计：</span><span class="calc-amount" id="edit-grand-total">0.00</span><span>元</span></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" id="btn-edit-cancel">取消</button>
+      <button class="btn btn-primary" id="btn-edit-save">保存修改</button>
+    </div>
+  </div>
+</div>
 <script>
 (function(){var h="62dc22ad2998cc534f7cd1474695cb4f05024065f1b7cebb0d1165dbe2a3f890";var s=document.getElementById("password-screen");var i=document.getElementById("pwd-input");var e=document.getElementById("pwd-error");var b=document.getElementById("pwd-btn");if(new URLSearchParams(location.search).get("v")||localStorage.getItem("ca")===h){s.style.display="none";return;}function chk(){var v=i.value;if(v.length!==4)return;crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(buf){var a=Array.from(new Uint8Array(buf)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");if(a===h){localStorage.setItem("ca",h);s.style.display="none";}else{e.style.display="block";i.value="";i.focus();setTimeout(function(){e.style.display="none";},2000);}});}i.addEventListener("keypress",function(ev){if(ev.key==="Enter")chk();});b.addEventListener("click",chk);i.focus();})();
 </script>
@@ -251,3 +293,6 @@
 <script src="js/app.js"></script>
 </body>
 </html>
+
+
+

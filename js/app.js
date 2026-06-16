@@ -4,699 +4,117 @@
 (function() {
 'use strict';
 
-// ==================== 数据 ====================
 const PRESET_VEGGIES = [];
 
 let currentItems = [];
-let editingIndex = -1; // -1 means not editing, >=0 means editing item at this index
+let editingIndex = -1;
+let currentStatsFilter = "all";
+let editingOrderId = null;
 
-// ==================== DOM 引用 ====================
 const $ = id => document.getElementById(id);
 const dom = {
-  headerTitle: $('header-title'),
-  pages: {
-    order: $('page-order'),
-    history: $('page-history'),
-    stats: $('page-stats')
-  },
-  navItems: document.querySelectorAll('.nav-item'),
-  inputCustomer: $('input-customer'),
-  inputDate: $('input-date'),
-  itemsList: $('items-list'),
-  itemCount: $('item-count'),
-  grandTotal: $('grand-total'),
-  btnAddItem: $('btn-add-item'),
-  btnSaveOrder: $('btn-save-order'),
-  modal: $('modal-add-item'),
-  modalClose: $('modal-close'),
-  btnCancelAdd: $('btn-cancel-add'),
-  btnConfirmAdd: $('btn-confirm-add'),
-  inputVegName: $('input-veg-name'),
-  presetVeggies: $('preset-veggies'),
-  inputWeight: $('input-weight'),
-  inputPrice: $('input-price'),
-  calcSubtotal: $('calc-subtotal'),
-  historyList: $('history-list'),
-  historySearch: $('history-search'),
-  detailModal: $('modal-order-detail'),
-  detailBody: $('detail-body'),
-  detailClose: $('modal-detail-close'),
-  statOrderCount: $('stat-order-count'),
- statTotalAmount: $('stat-total-amount'),
- rankingsList: $('rankings-list'),
-  loadSuggestion: $('load-suggestion'),
-  suggestionText: $('suggestion-text'),
-  btnLoadItems: $('btn-load-items'),
-  btnDismissSuggestion: $('btn-dismiss-suggestion'),
-  btnExport: $('btn-export-data'),
-  btnImport: $('btn-import-data'),
-  syncUrl: $('sync-server-url'),
-  syncStatus: $('sync-status'),
-  syncInfo: $('sync-info'),
-  btnTestSync: $('btn-test-sync'),
-  fileInput: $('file-input'),
+  headerTitle: $("header-title"),
+  pages: { order: $("page-order"), history: $("page-history"), stats: $("page-stats") },
+  navItems: document.querySelectorAll(".nav-item"),
+  inputCustomer: $("input-customer"),
+  inputDate: $("input-date"),
+  itemsList: $("items-list"),
+  itemCount: $("item-count"),
+  grandTotal: $("grand-total"),
+  btnAddItem: $("btn-add-item"),
+  btnSaveOrder: $("btn-save-order"),
+  modal: $("modal-add-item"),
+  modalClose: $("modal-close"),
+  btnCancelAdd: $("btn-cancel-add"),
+  btnConfirmAdd: $("btn-confirm-add"),
+  inputVegName: $("input-veg-name"),
+  presetVeggies: $("preset-veggies"),
+  inputWeight: $("input-weight"),
+  inputPrice: $("input-price"),
+  calcSubtotal: $("calc-subtotal"),
+  historyList: $("history-list"),
+  historySearch: $("history-search"),
+  detailModal: $("modal-order-detail"),
+  detailBody: $("detail-body"),
+  detailClose: $("modal-detail-close"),
+  statOrderCount: $("stat-order-count"),
+  statTotalAmount: $("stat-total-amount"),
+  rankingsList: $("rankings-list"),
+  loadSuggestion: $("load-suggestion"),
+  suggestionText: $("suggestion-text"),
+  btnLoadItems: $("btn-load-items"),
+  btnDismissSuggestion: $("btn-dismiss-suggestion"),
+  btnExport: $("btn-export-data"),
+  btnImport: $("btn-import-data"),
+  syncUrl: $("sync-server-url"),
+  syncStatus: $("sync-status"),
+  syncInfo: $("sync-info"),
+  btnTestSync: $("btn-test-sync"),
+  fileInput: $("file-input"),
+  editModal: $("modal-edit-order"),
+  editClose: $("modal-edit-close"),
+  editCustomer: $("edit-customer"),
+  editDate: $("edit-date"),
+  editItemsList: $("edit-items-list"),
+  editNewName: $("edit-new-name"),
+  editNewWeight: $("edit-new-weight"),
+  editNewPrice: $("edit-new-price"),
+  btnEditAddItem: $("btn-edit-add-item"),
+  btnEditCancel: $("btn-edit-cancel"),
+  btnEditSave: $("btn-edit-save"),
+  editGrandTotal: $("edit-grand-total"),
+  filterBtns: document.querySelectorAll(".filter-btn"),
+  customRange: $("custom-range"),
+  filterDateFrom: $("filter-date-from"),
+  filterDateTo: $("filter-date-to"),
+  btnFilterApply: $("btn-filter-apply"),
 };
 
-// ==================== 工具函数 ====================
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
-}
-
-function fmtNum(n) {
-  return Number(n || 0).toFixed(2);
-}
-
-function todayStr() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + day;
-}
-
-async function copyToClipboard(text){try{await navigator.clipboard.writeText(text);return true;}catch(e){}try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='0';ta.style.top='0';document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand('copy');document.body.removeChild(ta);if(ok)return true;}catch(e){}return false;}
-function showToast(msg) {
-  const old = document.querySelector('.toast');
-  if (old) old.remove();
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1800);
-}
-
-function showModal(el) {
-  el.style.display = 'flex';
-}
-
-function hideModal(el) {
-  el.style.display = 'none';
-}
-
-// ==================== 打开编辑模态框 ====================
-function openEditModal(index) {
-  const item = currentItems[index];
-  if (!item) return;
-  editingIndex = index;
-  dom.inputVegName.value = item.name;
-  dom.inputWeight.value = item.weight || '';
-  dom.inputPrice.value = item.unitPrice || '';
-  dom.calcSubtotal.textContent = fmtNum((item.weight || 0) * (item.unitPrice || 0));
-  // Highlight matching preset
-  document.querySelectorAll('.preset-chip').forEach(c => {
-    c.classList.toggle('selected', c.textContent === item.name);
-  });
-  dom.btnConfirmAdd.textContent = '确认修改';
-  showModal(dom.modal);
-  setTimeout(() => dom.inputWeight.focus(), 200);
-}
-
-// ==================== 当前订单 ====================
-function renderItems() {
-  const list = dom.itemsList;
-  if (currentItems.length === 0) {
-    list.innerHTML =
-      '<div class="empty-state">' +
-        '<div class="empty-icon">📋</div>' +
-        '<p>还没有添加蔬菜</p>' +
-        '<p class="empty-hint">点击下方按钮添加</p>' +
-      '</div>';
-    dom.itemCount.textContent = '0 项';
-    dom.grandTotal.textContent = '0.00';
-    return;
-  }
-
-  let html = '';
-  let grandTotal = 0;
-  currentItems.forEach((item, index) => {
-    const total = (item.weight || 0) * (item.unitPrice || 0);
-    item.total = total;
-    grandTotal += total;
-    html +=
-      '<div class="item-card" data-index="' + index + '">' +
-        '<div class="item-name">' + escHtml(item.name) + '</div>' +
-        '<div class="item-details">' +
-          '<div class="item-sub">' + fmtNum(item.weight) + ' 斤 × ' + fmtNum(item.unitPrice) + ' 元/斤</div>' +
-        '</div>' +
-        '<div class="item-total">' + fmtNum(total) + ' <span class="item-unit">元</span></div>' +
-        '<div class="item-actions">' +
-          '<button class="btn-edit-item" data-index="' + index + '">✏️</button>' +
-          '<button class="btn-delete-item" data-index="' + index + '">✕</button>' +
-        '</div>' +
-      '</div>';
-  });
-
-  list.innerHTML = html;
-  dom.itemCount.textContent = currentItems.length + ' 项';
-  dom.grandTotal.textContent = fmtNum(grandTotal);
-
-  // 编辑按钮
-  list.querySelectorAll('.btn-edit-item').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(e.currentTarget.dataset.index);
-      openEditModal(idx);
-    });
-  });
-
-  // 删除按钮
-  list.querySelectorAll('.btn-delete-item').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(e.currentTarget.dataset.index);
-      currentItems.splice(idx, 1);
-            renderItems();
-    });
-  });
-}
-
-function escHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// ==================== 添加蔬菜模态框 ====================
-function populatePresetVeggies() {
-  const container = dom.presetVeggies;
-  container.innerHTML = '';
-  PRESET_VEGGIES.forEach(name => {
-    const chip = document.createElement('button');
-    chip.className = 'preset-chip';
-    chip.textContent = name;
-    chip.type = 'button';
-    chip.addEventListener('click', () => {
-      dom.inputVegName.value = name;
-      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-    });
-    container.appendChild(chip);
-  });
-}
-
-function resetAddForm() {
-  dom.inputVegName.value = '';
-  dom.inputWeight.value = '';
-  dom.inputPrice.value = '';
-  dom.calcSubtotal.textContent = '0.00';
-  document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
-}
-
-function openAddModal() {
-  resetAddForm();
-  showModal(dom.modal);
-  setTimeout(() => dom.inputVegName.focus(), 200);
-}
-
-function confirmAddItem() {
-  const name = dom.inputVegName.value.trim();
-  const weight = parseFloat(dom.inputWeight.value) || 0;
-  const price = parseFloat(dom.inputPrice.value) || 0;
-
-  if (!name) { showToast('请输入蔬菜名称'); return; }
-  if (weight <= 0) { showToast('请输入有效重量'); return; }
-  if (price <= 0) { showToast('请输入有效单价'); return; }
-
-  const item = { id: genId(), name: name, weight: weight, unitPrice: price, total: weight * price };
-
-  if (editingIndex >= 0) {
-    // Update existing
-    item.id = currentItems[editingIndex].id;
-    currentItems[editingIndex] = item;
-    editingIndex = -1;
-    dom.btnConfirmAdd.textContent = '确认添加';
-    showToast('已修改: ' + name);
-  } else {
-    currentItems.push(item);
-    showToast('已添加: ' + name);
-  }
-  renderItems();
-  hideModal(dom.modal);
-}
-
-// ==================== 保存订单 ====================
-async function saveCurrentOrder() {
-  if (currentItems.length === 0) {
-    showToast('请先添加蔬菜');
-    return;
-  }
-
-  const customer = dom.inputCustomer.value.trim() || '酒店';
-  const date = dom.inputDate.value || todayStr();
-  const grandTotal = currentItems.reduce((sum, item) => sum + (item.total || 0), 0);
-
-  const order = {
-    customer: customer,
-    date: date,
-    items: currentItems.map(item => ({ ...item })),
-    grandTotal: grandTotal,
-    createdAt: Date.now()
-  };
-
-  try {
-    await DB.saveOrder(order);
-    showToast('订单已保存');
-    currentItems = [];
-    renderItems();
-  } catch (err) {
-    showToast('保存失败，请重试');
-    console.error('Save order error:', err);
-  }
-}
-
-// ==================== 页面切换 ====================
-function switchPage(pageName) {
-  // 隐藏所有页面
-  Object.values(dom.pages).forEach(p => p.classList.remove('active'));
-  // 显示目标页面
-  const target = dom.pages[pageName];
-  if (target) target.classList.add('active');
-  // 更新导航
-  dom.navItems.forEach(item => {
-    item.classList.toggle('active', item.dataset.page === pageName);
-  });
-  // 更新标题
-  const titles = { order: '当前订单', history: '历史记录', stats: '统计' };
-  dom.headerTitle.textContent = titles[pageName] || '菜农记账';
-  // 加载数据
-  if (pageName === 'history') loadHistory();
-  if (pageName === 'stats') loadStats();
-}
-
-// ==================== 历史记录 ====================
-async function loadHistory(query) {
-  try {
-    let orders = query ? await DB.searchOrders(query) : await DB.getAllOrders();
-    const list = dom.historyList;
-
-    if (orders.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">📜</div><p>还没有历史记录</p><p class="empty-hint">保存订单后将在这里显示</p></div>';
-      return;
-    }
-
-    // Group by customer
-    var groups = {};
-    orders.forEach(function(order) {
-      var customer = order.customer || '未知客户';
-      if (!groups[customer]) groups[customer] = { customer: customer, orders: [], totalAmount: 0, count: 0 };
-      groups[customer].orders.push(order);
-      groups[customer].totalAmount += order.grandTotal || 0;
-      groups[customer].count += 1;
-    });
-
-    // Sort groups by latest order
-    var groupList = Object.keys(groups).map(function(k) { return groups[k]; });
-    groupList.sort(function(a, b) {
-      var aLatest = Math.max.apply(null, a.orders.map(function(o) { return o.createdAt || 0; }));
-      var bLatest = Math.max.apply(null, b.orders.map(function(o) { return o.createdAt || 0; }));
-      return bLatest - aLatest;
-    });
-
-    var html = '';
-    groupList.forEach(function(group) {
-      var gid = 'g-' + group.customer.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
-      html += '<div class="history-group">' +
-        '<div class="history-group-header" data-group="' + escHtml(gid) + '">' +
-          '<span class="group-toggle">\u25b6</span>' +
-          '<span class="group-customer">' + escHtml(group.customer) + '</span>' +
-          '<span class="group-stats">' + group.count + '\u6b21 ' + fmtNum(group.totalAmount) + '\u5143</span>' +
-        '</div>' +
-        '<div class="history-group-body" id="' + escHtml(gid) + '">';
-
-      var monthGrps = {};
-      group.orders.forEach(function(order) {
-        var ym = (order.date || '').substring(0,7);
-        if (!monthGrps[ym]) monthGrps[ym] = { orders: [], total: 0 };
-        monthGrps[ym].orders.push(order);
-        monthGrps[ym].total += order.grandTotal || 0;
-      });
-      Object.keys(monthGrps).sort().reverse().forEach(function(ym) {
-        var mg = monthGrps[ym];
-        var d = new Date(ym+'-01');
-        var label = d.getFullYear()+'年'+(d.getMonth()+1)+'月';
-        html += '<div class="month-group"><div class="month-header"><span class="month-label">'+label+'</span><span class="month-total">'+fmtNum(mg.total)+'元</span><button class="btn btn-sm btn-success month-share-btn" data-customer="'+escHtml(group.customer)+'" data-month="'+ym+'">复制本月</button></div>';
-        mg.orders.forEach(function(order) {
-          var itemCount = (order.items || []).length;
-        html += '<div class="history-card" data-id="' + order.id + '">' +
-          '<div class="history-card-header">' +
-            '<div>' +
-              '<div class="history-card-date">' + (order.date || '') + '</div>' +
-              '<div class="history-card-customer">' + escHtml(order.customer || '') + '</div>' +
-            '</div>' +
-            '<div class="history-card-total">' + fmtNum(order.grandTotal) + ' <small>元</small></div>' +
-          '</div>' +
-          '<div class="history-card-body" id="detail-' + order.id + '">' +
-            '<div class="history-item-row" style="font-weight:600;color:var(--text-secondary);font-size:13px;">' +
-              '<span>蔬菜</span><span>明细</span><span>小计</span>' +
-            '</div>';
-        (order.items || []).forEach(function(item) {
-          html += '<div class="history-item-row">' +
-            '<span class="history-item-name">' + escHtml(item.name) + '</span>' +
-            '<span class="history-item-detail">' + fmtNum(item.weight) + '斤x' + fmtNum(item.unitPrice) + '元</span>' +
-            '<span class="history-item-subtotal">' + fmtNum(item.total) + '元</span>' +
-          '</div>';
-        });
-        html += '<div class="history-item-row" style="border-top:1px solid var(--border);padding-top:8px;font-weight:700;color:var(--green-800);">' +
-          '<span>合计</span><span></span><span>' + fmtNum(order.grandTotal) + '元</span>' +
-        '</div>' +
-        '</div>' +
-        '<div class="history-card-actions">' +
-        '<button class="btn btn-success share-btn" data-customer="' + encodeURIComponent(order.customer) + '" data-date="' + order.date + '">复制</button>' +
-                  '<button class="btn btn-primary detail-btn" data-id="' + order.id + '">展开详情</button>' +
-          '<button class="btn btn-danger delete-btn" data-id="' + order.id + '">删除</button>' +
-        '</div>' +
-      '</div>';
-      });
-      html += '</div></div>';
-      });
-    });
-
-    list.innerHTML = html;
-
-    // Group toggle
-    list.querySelectorAll('.history-group-header').forEach(function(h) {
-      h.addEventListener('click', function() {
-        var gid = h.dataset.group;
-        var body = document.getElementById(gid);
-        if (body) {
-          var open = body.style.display !== 'none';
-          body.style.display = open ? 'none' : 'block';
-          h.querySelector('.group-toggle').textContent = open ? '\u25b6' : '\u25bc';
-        }
-      });
-    });
-
-    // Detail toggle
-    list.querySelectorAll('.detail-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = e.currentTarget.dataset.id;
-        var body = document.getElementById('detail-' + id);
-        var open = body.classList.toggle('open');
-        e.currentTarget.textContent = open ? '收起' : '展开详情';
-      });
-    });
-
-    // Delete
-    list.querySelectorAll('.share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;try{var os=await DB.getCustomerDateOrders(c,d);var blob=await genImg(os,false);if(await copyImg(blob)){showToast('已复制');}else{var u=URL.createObjectURL(blob);var w=window.open('','_blank');if(w){w.document.write('<img src=\\u0022'+u+'\\u0022 style=\\u0022max-width:100%;margin:0 auto;display:block\\u0022>');}else{var i=document.createElement('img');i.src=u;i.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;z-index:20000;background:rgba(0,0,0,.8);object-fit:contain;padding:20px;box-sizing:border-box';i.onclick=function(){document.body.removeChild(i)};document.body.appendChild(i)}showToast('长按图片保存，再发送给客户')}}catch(e){showToast('失败')};});});
-list.querySelectorAll('.month-share-btn').forEach(function(btn){btn.addEventListener('click',async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;try{var os=await DB.getCustomerMonthOrders(c,m);var blob=await genImg(os,true);if(await copyImg(blob)){showToast('已复制');}else{var u=URL.createObjectURL(blob);var w=window.open('','_blank');if(w){w.document.write('<img src=\\u0022'+u+'\\u0022 style=\\u0022max-width:100%;margin:0 auto;display:block\\u0022>');}else{var i=document.createElement('img');i.src=u;i.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;z-index:20000;background:rgba(0,0,0,.8);object-fit:contain;padding:20px;box-sizing:border-box';i.onclick=function(){document.body.removeChild(i)};document.body.appendChild(i)}showToast('长按图片保存，再发送给客户')}}catch(e){showToast('失败')};});});
-
-list.querySelectorAll('.delete-btn').forEach(function(btn) {
-      btn.addEventListener('click', async function(e) {
-        e.stopPropagation();
-        var id = parseInt(e.currentTarget.dataset.id);
-        if (confirm('确定删除此订单？')) {
-          await DB.deleteOrder(id);
-          showToast('已删除');
-          loadHistory(dom.historySearch.value);
-        }
-      });
-    });
-
-  } catch (err) {
-    console.error('Load history error:', err);
-    dom.historyList.innerHTML = '<div class="empty-state"><p>加载失败</p></div>';
-  }
-}
-
-// ==================== 统计 ====================
-async function loadStats() {
-  try {
-    const stats = await DB.getStats();
-    dom.statOrderCount.textContent = stats.totalOrders;
-    dom.statTotalAmount.textContent = fmtNum(stats.totalAmount);
-
-    const list = dom.rankingsList;
-    if (stats.veggieRankings.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>暂无数据</p></div>';
-      return;
-    }
-
-    let html = '';
-    stats.veggieRankings.slice(0, 20).forEach((item, idx) => {
-      let posClass = 'normal';
-      let posText = String(idx + 1);
-      if (idx === 0) { posClass = 'gold'; posText = '🥇'; }
-      else if (idx === 1) { posClass = 'silver'; posText = '🥈'; }
-      else if (idx === 2) { posClass = 'bronze'; posText = '🥉'; }
-
-      html +=
-        '<div class="ranking-item">' +
-          '<div class="ranking-pos ' + posClass + '">' + posText + '</div>' +
-          '<span class="ranking-name">' + escHtml(item.name) + '</span>' +
-          '<span class="ranking-weight">' + fmtNum(item.totalWeight) + '</span>' +
-          '<span class="ranking-unit">斤</span>' +
-          '<span class="ranking-amount">' + fmtNum(item.totalAmount) + '元</span>' +
-        '</div>';
-    });
-
-    list.innerHTML = html;
-  } catch (err) {
-    console.error('Load stats error:', err);
-  }
-}
-
-// ==================== 初始化 ====================
-
-// ==================== 客户自动补全与加载上次订单 ====================
-
-// ==================== 数据导出/导入 ====================
-async function exportData() {
-  try {
-    const orders = await DB.getAllOrders();
-    if (orders.length === 0) { showToast('没有数据可导出'); return; }
-    const data = { version: 1, exportedAt: new Date().toISOString(), totalOrders: orders.length, orders: orders };
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '菜农记账_备份_' + todayStr() + '.json';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('导出成功：' + orders.length + '条订单');
-  } catch(e) { console.error('Export error:', e); showToast('导出失败'); }
-}
-
-async function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    if (!data.orders || !Array.isArray(data.orders)) { showToast('文件格式不正确'); return; }
-    var imported = 0;
-    for (var order of data.orders) {
-      delete order.id;
-      await DB.saveOrder(order);
-      imported++;
-    }
-    showToast('导入成功：' + imported + '条订单');
-    if (document.getElementById('page-history').classList.contains('active')) loadHistory();
-    if (document.getElementById('page-stats').classList.contains('active')) loadStats();
-  } catch(e) { console.error('Import error:', e); showToast('导入失败，文件格式有误'); }
-  event.target.value = '';
-}
-
-// ==================== 数据导出/导入 ====================
-async function exportData() {
-  try {
-    const orders = await DB.getAllOrders();
-    if (orders.length === 0) { showToast("没有数据可导出"); return; }
-    const data = { version: 1, exportedAt: new Date().toISOString(), totalOrders: orders.length, orders: orders };
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "菜农记账_备份_" + todayStr() + ".json";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast("导出成功：" + orders.length + "条订单");
-  } catch(e) { console.error("Export error:", e); showToast("导出失败"); }
-}
-
-async function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    if (!data.orders || !Array.isArray(data.orders)) { showToast("文件格式不正确"); return; }
-    var imported = 0;
-    for (var order of data.orders) {
-      delete order.id;
-      await DB.saveOrder(order);
-      imported++;
-    }
-    showToast("导入成功：" + imported + "条订单");
-    if (document.getElementById("page-history").classList.contains("active")) loadHistory();
-    if (document.getElementById("page-stats").classList.contains("active")) loadStats();
-  } catch(e) { console.error("Import error:", e); showToast("导入失败，文件格式有误"); }
-  event.target.value = "";
-}
-async function loadCustomerAutocomplete() {
-  try {
-    const names = await DB.getCustomerNames();
-    const datalist = document.getElementById('customer-list');
-    if (datalist) {
-      datalist.innerHTML = names.map(function(n) { return '<option value="' + escHtml(n) + '">'; }).join('');
-    }
-  } catch(e) { console.error('loadCustomerAutocomplete error:', e); }
-}
-
-async function onCustomerChanged() {
-  const name = dom.inputCustomer.value.trim();
-  if (!name) { hideLoadSuggestion(); return; }
-  if (currentItems.length > 0) return;
-  try {
-    const lastOrder = await DB.getLastOrderByCustomer(name);
-    if (lastOrder && lastOrder.items && lastOrder.items.length > 0) {
-      const date = lastOrder.date || '未知日期';
-      const count = lastOrder.items.length;
-      dom.suggestionText.textContent = '上次订单(' + date + ')有' + count + '种蔬菜，是否沿用品种和单价？';
-      dom.loadSuggestion.style.display = '';
-      dom.loadSuggestion.dataset.orderId = lastOrder.id;
-    } else {
-      hideLoadSuggestion();
-    }
-  } catch(e) { console.error('onCustomerChanged error:', e); }
-}
-
-function showLoadSuggestion(order) {
-  dom.loadSuggestion.style.display = 'flex';
-}
-
-function hideLoadSuggestion() {
-  dom.loadSuggestion.style.display = 'none';
-}
-
-async function loadPreviousItemsFromOrder(orderId) {
-  try {
-    hideLoadSuggestion();
-    const all = await DB.getAllOrders();
-    const order = all.find(function(o) { return String(o.id) === String(orderId); });
-    if (!order || !order.items) return;
-    currentItems = order.items.map(function(item) {
-      return {
-        id: genId(),
-        name: item.name,
-        weight: 0,
-        unitPrice: item.unitPrice || 0,
-        total: 0
-      };
-    });
-    renderItems();
-    showToast('已沿用上次的蔬菜品种和单价');
-  } catch(e) { console.error('loadPreviousItemsFromOrder error:', e); }
-}
-
-async function loadShareView(c,d){try{document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});document.getElementById("page-share").classList.add("active");document.getElementById("bottom-nav").style.display="none";var os=await((d+'').length>7?DB.getCustomerDateOrders(c,d):DB.getCustomerMonthOrders(c,m));var ai=[];var gt=0;os.forEach(function(o){o.items.forEach(function(i){ai.push(i);});gt+=o.grandTotal||0;});document.getElementById('share-customer').textContent=c;document.getElementById('share-date').textContent=d;if(!os||os.length===0){document.getElementById('share-items-body').innerHTML='<tr><td colspan=4 style=text-align:center;color:#999>无数据</td></tr>';document.getElementById('share-total').textContent='0.00';return;}var h='';if((d+'').length>7){ai.forEach(function(i){h+='<tr><td>'+(i.name||'')+'</td><td>'+fmtNum(i.weight)+'</td><td>'+fmtNum(i.unitPrice)+'</td><td>'+fmtNum(i.total)+'</td></tr>';});}else{var dg={};os.forEach(function(o){var dt=o.date||'';if(!dg[dt])dg[dt]={items:[],total:0};(o.items||[]).forEach(function(it){dg[dt].items.push(it);dg[dt].total+=it.total||0;});});Object.keys(dg).sort().forEach(function(dt){h+='<tr class=x-date-h><td colspan=4>'+dt+'</td></tr>';dg[dt].items.forEach(function(it){h+='<tr><td>'+(it.name||'')+'</td><td>'+fmtNum(it.weight)+'</td><td>'+fmtNum(it.unitPrice)+'</td><td>'+fmtNum(it.total)+'</td></tr>';});h+='<tr class=x-date-sub><td colspan=3>小计</td><td>'+fmtNum(dg[dt].total)+'</td></tr>';});}document.getElementById('share-items-body').innerHTML=h||'<tr><td colspan=4>-</td></tr>';document.getElementById('share-total').textContent=gt.toFixed(2);}catch(e){document.getElementById('share-date').textContent='错误:'+e.message;}}
-
-function padR(s,n){s=String(s);while(s.length<n)s+=' ';return s;}
-function padL(s,n){s=String(s);while(s.length<n)s=' '+s;return s;}
-function fmtShare(os){if(!os||!os.length)return'';var o=os[0],c=o.customer||'',d=o.date||'';var ls=['\u2501\u2501 '+c+'  '+d+' \u2501\u2501',''];var gt=0;os.forEach(function(od){(od.items||[]).forEach(function(it){var t=it.total||0;ls.push(padR(it.name||'',10)+'  '+padL(fmtNum(it.weight),5)+'\u65a4  '+padL(fmtNum(it.unitPrice),5)+'\u5143  '+padL(fmtNum(t),6)+'\u5143');gt+=t;});});ls.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');ls.push('\u5408\u8ba1\uff1a'+fmtNum(gt)+'\u5143');ls.push('');ls.push('\u2500\u2500 \u83dc\u519c\u8bb0\u8d26 \u2500\u2500');return ls.join('\n');}
-function fmtMonth(os,m){if(!os||!os.length)return'';var c=os[0].customer||'',y=m.substring(0,4),mm=parseInt(m.substring(5,7));var ls=['\u2501\u2501 '+c+'  '+y+'\u5e74'+mm+'\u6708 \u2501\u2501',''];var gt=0;os.forEach(function(od){var dt=od.date||'';ls.push('\u25c6 '+dt);var ot=0;(od.items||[]).forEach(function(it){var t=it.total||0;ls.push('  '+padR(it.name||'',8)+'  '+padL(fmtNum(it.weight),4)+'\u65a4  '+padL(fmtNum(it.unitPrice),4)+'\u5143  '+padL(fmtNum(t),5)+'\u5143');ot+=t;});ls.push('  \u2500\u2500 \u5c0f\u8ba1 '+fmtNum(ot)+'\u5143');gt+=ot;});ls.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');ls.push('\u5408\u8ba1\uff1a'+fmtNum(gt)+'\u5143');ls.push('');ls.push('\u2500\u2500 \u83dc\u519c\u8bb0\u8d26 \u2500\u2500');return ls.join('\n');}
-
-function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
-async function genImg(os,isM){var dpr=window.devicePixelRatio||1;var W=440,pd=20,lh=28,nl=32,cl=160,pc=268,tr=W-pd-8;var dates={};var gt=0;os.forEach(function(o){if(!dates[o.date||''])dates[o.date||'']={items:[],total:0};(o.items||[]).forEach(function(it){dates[o.date||''].items.push(it);dates[o.date||''].total+=it.total||0;});gt+=o.grandTotal||0;});var dl=Object.keys(dates).sort();var hh=78;var ch=30;if(isM){dl.forEach(function(dt){ch+=22+dates[dt].items.length*lh+20;});}else{ch+=dates[dl[0]||'']?dates[dl[0]].items.length*lh:0+35;}var H=hh+ch+pd*2;var ca=document.createElement('canvas');ca.width=W*dpr;ca.height=H*dpr;ca.style.width=W+'px';ca.style.height=H+'px';var x=ca.getContext('2d');x.scale(dpr,dpr);x.fillStyle='#f5f5f5';x.fillRect(0,0,W,H);x.fillStyle='#fff';roundRect(x,pd,pd,W-pd*2,H-pd*2,10);x.fill();x.fillStyle='#2E7D32';x.font='bold 18px sans-serif';x.textAlign='center';x.fillText(os[0].customer||'',W/2,pd+24);x.font='13px sans-serif';x.fillStyle='#888';if(isM){var ym=dl[0].substring(0,7);x.fillText(ym,W/2,pd+46);}else{x.fillText(os[0].date||'',W/2,pd+46);}x.strokeStyle='#2E7D32';x.lineWidth=2;x.beginPath();x.moveTo(pd+8,pd+60);x.lineTo(W-pd-8,pd+60);x.stroke();x.fillStyle='#333';x.font='13px sans-serif';x.textAlign='left';x.fillText('品名',nl,pd+80);x.textAlign='center';x.fillText('重量',cl,pd+80);x.fillText('单价',pc,pd+80);x.textAlign='right';x.fillText('金额',tr,pd+80);var cy=pd+100;x.font='14px sans-serif';if(isM){dl.forEach(function(dt){var dg=dates[dt];x.fillStyle='#2E7D32';x.font='13px sans-serif';x.textAlign='left';x.fillText(dt.substring(5),nl,cy);cy+=20;x.font='14px sans-serif';x.fillStyle='#333';dg.items.forEach(function(it){x.textAlign='left';x.fillText(it.name||'',nl,cy);x.textAlign='center';x.fillText(fmtNum(it.weight)+'\u65a4',cl,cy);x.fillText(fmtNum(it.unitPrice)+'\u5143',pc,cy);x.textAlign='right';x.fillText(fmtNum(it.total)+'\u5143',tr,cy);cy+=lh;});x.fillStyle='#999';x.font='12px sans-serif';x.textAlign='right';x.fillText('\u5c0f\u8ba1 '+fmtNum(dg.total)+'\u5143',tr,cy);cy+=18;});}else{var items=[];os.forEach(function(o){(o.items||[]).forEach(function(it){items.push(it);});});items.forEach(function(it){x.textAlign='left';x.fillText(it.name||'',nl,cy);x.textAlign='center';x.fillText(fmtNum(it.weight)+'\u65a4',cl,cy);x.fillText(fmtNum(it.unitPrice)+'\u5143',pc,cy);x.textAlign='right';x.fillText(fmtNum(it.total)+'\u5143',tr,cy);cy+=lh;});}x.strokeStyle='#ddd';x.lineWidth=1;x.beginPath();x.moveTo(pd+8,cy);x.lineTo(W-pd-8,cy);x.stroke();x.fillStyle='#2E7D32';x.font='bold 16px sans-serif';x.textAlign='right';x.fillText('\u5408\u8ba1\uff1a'+fmtNum(gt)+'\u5143',tr,cy+26);x.fillStyle='#bbb';x.font='12px sans-serif';x.textAlign='center';x.fillText('\u2500\u2500 \u83dc\u519c\u8bb0\u8d26 \u2500\u2500',W/2,H-pd-6);return new Promise(function(r){ca.toBlob(function(b){r(b);},'image/png');});}
-async function copyImg(blob){try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);return true;}catch(e){return false;}}
-function init(){var _p=new URLSearchParams(location.search);if(_p.get('v')&&_p.get('d')){loadShareView(_p.get('v'),_p.get('d'));return;}
-  // 设置日期
-  dom.inputDate.value = todayStr();
-  loadCustomerAutocomplete();
-
-  // 预设蔬菜
-  populatePresetVeggies();
-
-  // 底部导航切换
-  dom.navItems.forEach(item => {
-    item.addEventListener('click', () => {
-      switchPage(item.dataset.page);
-    });
-  });
-
-  // 添加蔬菜
-  dom.btnAddItem.addEventListener('click', openAddModal);
-  dom.modalClose.addEventListener('click', () => { editingIndex = -1; dom.btnConfirmAdd.textContent = '确认添加'; hideModal(dom.modal); });
-  dom.btnCancelAdd.addEventListener('click', () => { editingIndex = -1; dom.btnConfirmAdd.textContent = '确认添加'; hideModal(dom.modal); });
-  dom.modal.addEventListener('click', (e) => {
-    if (e.target === dom.modal) hideModal(dom.modal);
-  });
-
-  // 实时计算小计
-  dom.inputWeight.addEventListener('input', updateCalc);
-  dom.inputPrice.addEventListener('input', updateCalc);
-  function updateCalc() {
-    const w = parseFloat(dom.inputWeight.value) || 0;
-    const p = parseFloat(dom.inputPrice.value) || 0;
-    dom.calcSubtotal.textContent = fmtNum(w * p);
-  }
-
-  // 确认添加 (回车或按钮)
-  dom.btnConfirmAdd.addEventListener('click', confirmAddItem);
-  dom.inputPrice.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') confirmAddItem();
-  });
-
-  // 保存订单
-  dom.btnSaveOrder.addEventListener('click', saveCurrentOrder);
-
-  // 搜索历史
-  let searchTimer;
-  dom.historySearch.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadHistory(dom.historySearch.value), 300);
-  });
-
-  // 关闭详情
-  dom.detailClose.addEventListener('click', () => hideModal(dom.detailModal));
-  dom.detailModal.addEventListener('click', (e) => {
-    if (e.target === dom.detailModal) hideModal(dom.detailModal);
-  });
-
-  // 客户名称变更时加载上次订单
-  dom.inputCustomer.addEventListener('blur', onCustomerChanged);
-  dom.inputCustomer.addEventListener('change', onCustomerChanged);
-
-  // 沿用上次订单按钮
-  dom.btnLoadItems.addEventListener('click', function() {
-    const orderId = dom.loadSuggestion.dataset.orderId;
-    if (orderId) loadPreviousItemsFromOrder(orderId);
-  });
-  dom.btnDismissSuggestion.addEventListener('click', hideLoadSuggestion);
-  // 导出导入
-  dom.btnExport.addEventListener('click', exportData);
-  dom.btnImport.addEventListener('click', function() { dom.fileInput.click(); });
-  dom.fileInput.addEventListener('change', importData);
-
-
-
-  // 云端同步
-  Sync.supabaseTest().then(function(ok) { if (ok) { dom.syncStatus.textContent = "已连接"; dom.syncStatus.className = "sync-badge sync-active"; dom.syncInfo.textContent = "Supabase 云端就绪"; } else { dom.syncStatus.textContent = "未连接"; dom.syncInfo.textContent = "Supabase 不可用，仅本地模式"; } });
-  dom.btnTestSync.addEventListener("click", async function() {
-    var url = dom.syncUrl.value.trim();
-    Sync.setCloudServer(url);
-    dom.syncInfo.textContent = "正在测试...";
-    var ok = await Sync.testCloudConnection();
-    if (ok) { dom.syncInfo.textContent = "连接成功！"; updateSyncStatus(); }
-    else { dom.syncInfo.textContent = "连接失败，请检查地址"; dom.syncStatus.textContent = "未连接"; dom.syncStatus.className = "sync-badge"; }
-  });
-  function updateSyncStatus() {
-    var url = Sync.getCloudServer();
-    if (url) { dom.syncStatus.textContent = "已配置"; dom.syncStatus.className = "sync-badge sync-active"; dom.syncInfo.textContent = "服务器: " + url; }
-    else { dom.syncStatus.textContent = "未连接"; dom.syncStatus.className = "sync-badge"; dom.syncInfo.textContent = "配置服务器后数据自动同步到云端"; }
-  }
-
-  // 渲染订单
-  renderItems();
-}
-
-// 等 DOM 加载完成
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
-
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
+function fmtNum(n) { return Number(n || 0).toFixed(2); }
+function todayStr() { var d = new Date(); var y = d.getFullYear(); var m = String(d.getMonth()+1).padStart(2,"0"); var day = String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; }
+function yesterdayStr() { var d = new Date(Date.now()-86400000); var y = d.getFullYear(); var m = String(d.getMonth()+1).padStart(2,"0"); var day = String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; }
+async function copyToClipboard(text){try{await navigator.clipboard.writeText(text);return true;}catch(e){}try{var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.left="0";ta.style.top="0";document.body.appendChild(ta);ta.focus();ta.select();var ok=document.execCommand("copy");document.body.removeChild(ta);if(ok)return true;}catch(e){}return false;}
+function showToast(msg){var old=document.querySelector(".toast");if(old)old.remove();var el=document.createElement("div");el.className="toast";el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},1800);}
+function showModal(el){el.style.display="flex";}
+function hideModal(el){el.style.display="none";}
+function escHtml(str){var d=document.createElement("div");d.textContent=str||"";return d.innerHTML;}
+
+function openEditModal(index){var item=currentItems[index];if(!item)return;editingIndex=index;dom.inputVegName.value=item.name;dom.inputWeight.value=item.weight||"";dom.inputPrice.value=item.unitPrice||"";dom.calcSubtotal.textContent=fmtNum((item.weight||0)*(item.unitPrice||0));document.querySelectorAll(".preset-chip").forEach(function(c){c.classList.toggle("selected",c.textContent===item.name)});dom.btnConfirmAdd.textContent="确认修改";showModal(dom.modal);setTimeout(function(){dom.inputWeight.focus()},200);}
+
+function renderItems(){var list=dom.itemsList;if(currentItems.length===0){list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>还没有添加蔬菜</p><p class="empty-hint">点击下方按钮添加</p></div>';dom.itemCount.textContent="0 项";dom.grandTotal.textContent="0.00";return}var html="";var gt=0;currentItems.forEach(function(item,idx){var t=(item.weight||0)*(item.unitPrice||0);item.total=t;gt+=t;html+='<div class="item-card" data-index="'+idx+'"><div class="item-name">'+escHtml(item.name)+'</div><div class="item-details"><div class="item-sub">'+fmtNum(item.weight)+' 斤 × '+fmtNum(item.unitPrice)+' 元/斤</div></div><div class="item-total">'+fmtNum(t)+' <span class="item-unit">元</span></div><div class="item-actions"><button class="btn-edit-item" data-index="'+idx+'">✏️</button><button class="btn-delete-item" data-index="'+idx+'">✕</button></div></div>'});list.innerHTML=html;dom.itemCount.textContent=currentItems.length+" 项";dom.grandTotal.textContent=fmtNum(gt);list.querySelectorAll(".btn-edit-item").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();openEditModal(parseInt(this.dataset.index))})});list.querySelectorAll(".btn-delete-item").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();currentItems.splice(parseInt(this.dataset.index),1);renderItems()})})}
+function openAddModal(){editingIndex=-1;dom.inputVegName.value="";dom.inputWeight.value="";dom.inputPrice.value="";dom.calcSubtotal.textContent="0.00";dom.btnConfirmAdd.textContent="确认添加";document.querySelectorAll(".preset-chip").forEach(function(c){c.classList.remove("selected")});showModal(dom.modal);setTimeout(function(){dom.inputVegName.focus()},200)}
+function confirmAddItem(){var name=dom.inputVegName.value.trim();var w=parseFloat(dom.inputWeight.value)||0;var p=parseFloat(dom.inputPrice.value)||0;if(!name){showToast("请输入蔬菜名称");dom.inputVegName.focus();return}if(w<=0){showToast("请输入有效重量");dom.inputWeight.focus();return}var item={id:genId(),name:name,weight:w,unitPrice:p,total:w*p};if(editingIndex>=0){currentItems[editingIndex]=item}else{currentItems.push(item)}hideModal(dom.modal);editingIndex=-1;dom.btnConfirmAdd.textContent="确认添加";renderItems()}
+async function saveCurrentOrder(){var customer=(dom.inputCustomer.value||"").trim();if(!customer){showToast("请输入客户名称");dom.inputCustomer.focus();return}if(currentItems.length===0){showToast("请先添加蔬菜");return}var order={customer:customer,date:dom.inputDate.value||todayStr(),items:currentItems.map(function(it){return{id:it.id,name:it.name,weight:it.weight,unitPrice:it.unitPrice,total:it.total}}),grandTotal:parseFloat(dom.grandTotal.textContent),createdAt:Date.now()};try{await DB.saveOrder(order);showToast("保存成功");currentItems=[];renderItems();dom.inputCustomer.value="";hideLoadSuggestion();updateCustomerAutocomplete()}catch(err){console.error("Save error:",err);showToast("保存失败")}}
+function switchPage(pn){var t={order:"当前订单",history:"历史记录",stats:"统计"};dom.headerTitle.textContent=t[pn]||"菜农记账";document.querySelectorAll(".page").forEach(function(p){p.classList.toggle("active",p.id==="page-"+pn)});dom.navItems.forEach(function(n){n.classList.toggle("active",n.dataset.page===pn)});if(pn==="history")loadHistory();if(pn==="stats")loadStats()}
+
+async function loadHistory(query){try{var orders=query?await DB.searchOrders(query):await DB.getAllOrders();var list=dom.historyList;if(orders.length===0){list.innerHTML='<div class="empty-state"><div class="empty-icon">📜</div><p>还没有历史记录</p><p class="empty-hint">保存订单后将在这里显示</p></div>';return}var groups={};orders.forEach(function(o){var c=o.customer||"未知客户";if(!groups[c])groups[c]={customer:c,orders:[],totalAmount:0,count:0};groups[c].orders.push(o);groups[c].totalAmount+=o.grandTotal||0;groups[c].count+=1});var gl=Object.keys(groups).map(function(k){return groups[k]});gl.sort(function(a,b){var aL=Math.max.apply(null,a.orders.map(function(o){return o.createdAt||0}));var bL=Math.max.apply(null,b.orders.map(function(o){return o.createdAt||0}));return bL-aL});var today=todayStr();var yesterday=yesterdayStr();var html="";gl.forEach(function(group){var gid="g-"+group.customer.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g,"");var recent=group.orders.filter(function(o){return o.date===today||o.date===yesterday});if(recent.length===0){var srt=group.orders.slice().sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0)});recent=srt.slice(0,1)}var ygs={};group.orders.forEach(function(o){var y=(o.date||"").substring(0,4);if(!y)y="未知";if(!ygs[y])ygs[y]={orders:[],total:0};ygs[y].orders.push(o);ygs[y].total+=o.grandTotal||0});html+='<div class="history-group"><div class="history-group-header" data-group="'+escHtml(gid)+'"><span class="group-toggle">▼</span><span class="group-customer">'+escHtml(group.customer)+'</span><span class="group-stats">'+group.count+'次 '+fmtNum(group.totalAmount)+'元</span></div><div class="history-group-body" id="'+escHtml(gid)+'">';if(recent.length>0){html+='<div class="recent-section"><div class="recent-label">📅 最近订单</div>';recent.forEach(function(o){html+=buildOrderCard(o)});html+='</div>'}var ys=Object.keys(ygs).sort().reverse();ys.forEach(function(y){var yg=ygs[y];var yid=gid+"-y-"+y;html+='<div class="year-group"><div class="year-header" data-year="'+escHtml(yid)+'"><span class="year-toggle">▶</span><span class="year-label">'+y+'年</span><span class="year-stats">'+yg.orders.length+'单 '+fmtNum(yg.total)+'元</span></div><div class="year-body" id="'+escHtml(yid)+'" style="display:none">';var mgs={};yg.orders.forEach(function(o){var ym=(o.date||"").substring(0,7);if(!mgs[ym])mgs[ym]={orders:[],total:0};mgs[ym].orders.push(o);mgs[ym].total+=o.grandTotal||0});Object.keys(mgs).sort().reverse().forEach(function(ym){var mg=mgs[ym];var d=new Date(ym+"-01");var mlabel=d.getFullYear()+"年"+(d.getMonth()+1)+"月";var mid=yid+"-m-"+ym.replace(/[^0-9]/g,"");html+='<div class="month-group"><div class="month-header" data-month="'+escHtml(mid)+'"><span class="month-toggle">▶</span><span class="month-label">'+mlabel+'</span><span class="month-total">'+fmtNum(mg.total)+'元</span><button class="btn btn-sm btn-success month-share-btn" data-customer="'+escHtml(group.customer)+'" data-month="'+ym+'">复制本月</button></div><div class="month-body" id="'+escHtml(mid)+'">';mg.orders.forEach(function(o){html+=buildOrderCard(o)});html+="</div></div>"});html+="</div></div>"});html+="</div></div>"});list.innerHTML=html;list.querySelectorAll(".history-group-header").forEach(function(h){h.addEventListener("click",function(){var gid=h.dataset.group;var body=document.getElementById(gid);if(body){var open=body.style.display!=="none";body.style.display=open?"none":"block";h.querySelector(".group-toggle").textContent=open?"▶":"▼"}})});list.querySelectorAll(".year-header").forEach(function(h){h.addEventListener("click",function(e){e.stopPropagation();var yid=h.dataset.year;var body=document.getElementById(yid);if(body){var open=body.style.display!=="none";body.style.display=open?"none":"block";h.querySelector(".year-toggle").textContent=open?"▶":"▼"}})});list.querySelectorAll(".month-header").forEach(function(h){h.addEventListener("click",function(e){if(e.target.closest(".month-share-btn"))return;e.stopPropagation();var mid=h.dataset.month;var body=document.getElementById(mid);if(body){var open=body.style.display!=="none";body.style.display=open?"none":"block";h.querySelector(".month-toggle").textContent=open?"▶":"▼"}})});list.querySelectorAll(".detail-btn").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var id=e.currentTarget.dataset.id;var body=document.getElementById("detail-"+id);var open=body.classList.toggle("open");e.currentTarget.textContent=open?"收起":"展开详情"})});list.querySelectorAll(".share-btn").forEach(function(b){b.addEventListener("click",async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var d=e.currentTarget.dataset.date;try{var os=await DB.getCustomerDateOrders(c,d);var blob=await genImg(os,false);if(await copyImg(blob)){showToast("已复制")}else{var u=URL.createObjectURL(blob);var w=window.open("","_blank");if(w){w.document.write('<img src="'+u+'" style="max-width:100%;margin:0 auto;display:block">')}else{var img=document.createElement("img");img.src=u;img.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;z-index:20000;background:rgba(0,0,0,.8);object-fit:contain;padding:20px;box-sizing:border-box";img.onclick=function(){document.body.removeChild(img)};document.body.appendChild(img);showToast("长按图片保存，再发送给客户")}}}catch(e){showToast("失败")}})});list.querySelectorAll(".month-share-btn").forEach(function(b){b.addEventListener("click",async function(e){e.stopPropagation();var c=decodeURIComponent(e.currentTarget.dataset.customer);var m=e.currentTarget.dataset.month;try{var os=await DB.getCustomerMonthOrders(c,m);var blob=await genImg(os,true);if(await copyImg(blob)){showToast("已复制")}else{var u=URL.createObjectURL(blob);var w=window.open("","_blank");if(w){w.document.write('<img src="'+u+'" style="max-width:100%;margin:0 auto;display:block">')}else{var img=document.createElement("img");img.src=u;img.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;z-index:20000;background:rgba(0,0,0,.8);object-fit:contain;padding:20px;box-sizing:border-box";img.onclick=function(){document.body.removeChild(img)};document.body.appendChild(img);showToast("长按图片保存，再发送给客户")}}}catch(e){showToast("失败")}})});list.querySelectorAll(".delete-btn").forEach(function(b){b.addEventListener("click",async function(e){e.stopPropagation();var id=parseInt(e.currentTarget.dataset.id);if(confirm("确定删除此订单？")){await DB.deleteOrder(id);showToast("已删除");loadHistory(dom.historySearch.value)}})});list.querySelectorAll(".edit-btn").forEach(function(b){b.addEventListener("click",function(e){e.stopPropagation();var id=parseInt(e.currentTarget.dataset.id);openEditOrderModal(id)})})}catch(err){console.error("Load history error:",err);dom.historyList.innerHTML='<div class="empty-state"><p>加载失败</p></div>'}}
+
+function buildOrderCard(order){var h='<div class="history-card" data-id="'+order.id+'"><div class="history-card-header"><div><div class="history-card-date">'+(order.date||"")+'</div><div class="history-card-customer">'+escHtml(order.customer||"")+'</div></div><div class="history-card-total">'+fmtNum(order.grandTotal)+' <small>元</small></div></div><div class="history-card-body" id="detail-'+order.id+'"><div class="history-item-row" style="font-weight:600;color:var(--text-secondary);font-size:13px;"><span>蔬菜</span><span>明细</span><span>小计</span></div>';(order.items||[]).forEach(function(it){h+='<div class="history-item-row"><span class="history-item-name">'+escHtml(it.name)+'</span><span class="history-item-detail">'+fmtNum(it.weight)+'斤x'+fmtNum(it.unitPrice)+'元</span><span class="history-item-subtotal">'+fmtNum(it.total)+'元</span></div>'});h+='<div class="history-item-row" style="border-top:1px solid var(--border);padding-top:8px;font-weight:700;color:var(--green-800);"><span>合计</span><span></span><span>'+fmtNum(order.grandTotal)+'元</span></div></div><div class="history-card-actions"><button class="btn btn-success share-btn" data-customer="'+encodeURIComponent(order.customer)+'" data-date="'+order.date+'">复制</button><button class="btn btn-primary detail-btn" data-id="'+order.id+'">展开详情</button><button class="btn btn-warning edit-btn" data-id="'+order.id+'">修改</button><button class="btn btn-danger delete-btn" data-id="'+order.id+'">删除</button></div></div>';return h}
+
+async function openEditOrderModal(oid){var orders=await DB.getAllOrders();var order=orders.find(function(o){return String(o.id)===String(oid)});if(!order){showToast("订单不存在");return}editingOrderId=oid;dom.editCustomer.value=order.customer||"";dom.editDate.value=order.date||"";renderEditItems(order.items||[]);showModal(dom.editModal)}
+function renderEditItems(items){var h="";var t=0;items.forEach(function(it,idx){var s=(it.weight||0)*(it.unitPrice||0);t+=s;h+='<div class="edit-item-row" data-idx="'+idx+'"><input type="text" class="edit-item-name" value="'+escHtml(it.name)+'" placeholder="品名" style="width:80px"><input type="number" class="edit-item-weight" value="'+(it.weight||"")+'" placeholder="斤" step="0.1" style="width:55px"><input type="number" class="edit-item-price" value="'+(it.unitPrice||"")+'" placeholder="单价" step="0.1" style="width:65px"><span class="edit-item-sub">'+fmtNum(s)+'</span><button class="btn-edit-del">✕</button></div>'});dom.editItemsList.innerHTML=h;dom.editGrandTotal.textContent=fmtNum(t);dom.editItemsList.querySelectorAll("input").forEach(function(inp){inp.addEventListener("input",recalcEditTotal)});dom.editItemsList.querySelectorAll(".btn-edit-del").forEach(function(b){b.addEventListener("click",function(){b.parentElement.remove();recalcEditTotal()})})}
+function recalcEditTotal(){var rows=dom.editItemsList.querySelectorAll(".edit-item-row");var t=0;rows.forEach(function(r){var w=parseFloat(r.querySelector(".edit-item-weight").value)||0;var p=parseFloat(r.querySelector(".edit-item-price").value)||0;var s=w*p;r.querySelector(".edit-item-sub").textContent=fmtNum(s);t+=s});dom.editGrandTotal.textContent=fmtNum(t)}
+function addEditItem(){var name=(dom.editNewName.value||"").trim();var w=parseFloat(dom.editNewWeight.value)||0;var p=parseFloat(dom.editNewPrice.value)||0;if(!name){showToast("请输入名称");return}var s=w*p;var row=document.createElement("div");row.className="edit-item-row";row.innerHTML='<input type="text" class="edit-item-name" value="'+escHtml(name)+'" placeholder="品名" style="width:80px"><input type="number" class="edit-item-weight" value="'+(w||"")+'" placeholder="斤" step="0.1" style="width:55px"><input type="number" class="edit-item-price" value="'+(p||"")+'" placeholder="单价" step="0.1" style="width:65px"><span class="edit-item-sub">'+fmtNum(s)+'</span><button class="btn-edit-del">✕</button>';dom.editItemsList.appendChild(row);row.querySelectorAll("input").forEach(function(inp){inp.addEventListener("input",recalcEditTotal)});row.querySelector(".btn-edit-del").addEventListener("click",function(){row.remove();recalcEditTotal()});recalcEditTotal();dom.editNewName.value="";dom.editNewWeight.value="";dom.editNewPrice.value=""}
+async function saveEditOrder(){if(!editingOrderId)return;var customer=(dom.editCustomer.value||"").trim();var date=dom.editDate.value||todayStr();if(!customer){showToast("请输入客户名称");return}var items=[];dom.editItemsList.querySelectorAll(".edit-item-row").forEach(function(r){var name=(r.querySelector(".edit-item-name").value||"").trim();var w=parseFloat(r.querySelector(".edit-item-weight").value)||0;var p=parseFloat(r.querySelector(".edit-item-price").value)||0;if(name)items.push({id:genId(),name:name,weight:w,unitPrice:p,total:w*p})});if(items.length===0){showToast("至少保留一个蔬菜");return}var gt=items.reduce(function(s,it){return s+it.total},0);var upd={id:editingOrderId,customer:customer,date:date,items:items,grandTotal:gt,createdAt:Date.now()};try{await DB.updateOrder(upd);showToast("修改成功");hideModal(dom.editModal);editingOrderId=null;loadHistory(dom.historySearch.value)}catch(e){console.error("Update error:",e);showToast("修改失败")}}
+
+async function loadStats(filter){try{if(!filter)filter=currentStatsFilter;var all=await DB.getAllOrders();var fo;var today=todayStr();switch(filter){case"today":fo=all.filter(function(o){return o.date===today});break;case"week":var d=new Date();var dow=d.getDay()||7;var mon=new Date(d);mon.setDate(d.getDate()-dow+1);var ms=mon.getFullYear()+"-"+String(mon.getMonth()+1).padStart(2,"0")+"-"+String(mon.getDate()).padStart(2,"0");fo=all.filter(function(o){return o.date>=ms});break;case"month":var ym=today.substring(0,7);fo=all.filter(function(o){return o.date.substring(0,7)===ym});break;case"quarter":var now=new Date();var q=Math.floor(now.getMonth()/3);var qs=new Date(now.getFullYear(),q*3,1);var qss=qs.getFullYear()+"-"+String(qs.getMonth()+1).padStart(2,"0")+"-01";fo=all.filter(function(o){return o.date>=qss});break;case"year":var y=today.substring(0,4);fo=all.filter(function(o){return o.date.substring(0,4)===y});break;case"custom":var from=dom.filterDateFrom?dom.filterDateFrom.value:"";var to=dom.filterDateTo?dom.filterDateTo.value:"";fo=all.filter(function(o){return o.date>=from&&o.date<=to});break;default:fo=all}var tc=fo.length;var ta=fo.reduce(function(s,o){return s+(o.grandTotal||0)},0);dom.statOrderCount.textContent=tc;dom.statTotalAmount.textContent=fmtNum(ta);var vm={};fo.forEach(function(o){(o.items||[]).forEach(function(it){var n=it.name;if(!vm[n])vm[n]={tw:0,ta:0,c:0};vm[n].tw+=it.weight||0;vm[n].ta+=it.total||0;vm[n].c+=1})});var vr=Object.entries(vm).map(function(e){return{name:e[0],totalWeight:e[1].tw,totalAmount:e[1].ta,count:e[1].c}}).sort(function(a,b){return b.totalWeight-a.totalWeight});var list=dom.rankingsList;if(vr.length===0){list.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><p>暂无数据</p></div>';return}var h="";vr.slice(0,20).forEach(function(it,idx){var pc="normal";var pt=String(idx+1);if(idx===0){pc="gold";pt="🥇"}else if(idx===1){pc="silver";pt="🥈"}else if(idx===2){pc="bronze";pt="🥉"}h+='<div class="ranking-item"><div class="ranking-pos '+pc+'">'+pt+'</div><span class="ranking-name">'+escHtml(it.name)+'</span><span class="ranking-weight">'+fmtNum(it.totalWeight)+'</span><span class="ranking-unit">斤</span><span class="ranking-amount">'+fmtNum(it.totalAmount)+'元</span></div>'});list.innerHTML=h}catch(err){console.error("Load stats error:",err)}}
+
+async function updateCustomerAutocomplete(){try{var names=await DB.getCustomerNames();var dl=document.getElementById("customer-list");dl.innerHTML=names.map(function(n){return'<option value="'+escHtml(n)+'">'}).join("")}catch(e){}}
+async function loadCustomerAutocomplete(){await updateCustomerAutocomplete()}
+async function onCustomerChanged(){var name=(dom.inputCustomer.value||"").trim();if(!name){hideLoadSuggestion();return}try{var last=await DB.getLastOrderByCustomer(name);if(last&&last.items&&last.items.length>0){dom.suggestionText.textContent='检测到 "'+name+'" 上次订单（'+last.date+'），沿用蔬菜和单价？';dom.loadSuggestion.style.display="flex";dom.loadSuggestion.dataset.orderId=last.id}else{hideLoadSuggestion()}}catch(e){hideLoadSuggestion()}}
+function hideLoadSuggestion(){dom.loadSuggestion.style.display="none"}
+async function loadPreviousItemsFromOrder(oid){try{var orders=await DB.getAllOrders();var order=orders.find(function(o){return String(o.id)===String(oid)});if(!order||!order.items)return;currentItems=order.items.map(function(it){return{id:genId(),name:it.name,weight:0,unitPrice:it.unitPrice,total:0}});renderItems();hideLoadSuggestion();showToast("已加载 "+currentItems.length+" 项")}catch(e){showToast("加载失败")}}
+async function exportData(){try{var orders=await DB.getAllOrders();if(orders.length===0){showToast("没有数据可导出");return}var data={version:1,exportedAt:new Date().toISOString(),totalOrders:orders.length,orders:orders};var json=JSON.stringify(data,null,2);var blob=new Blob([json],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="菜农记账_备份_"+todayStr()+".json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);showToast("导出成功："+orders.length+"条订单")}catch(e){console.error("Export error:",e);showToast("导出失败")}}
+async function importData(event){var file=event.target.files[0];if(!file)return;try{var text=await file.text();var data=JSON.parse(text);if(!data.orders||!Array.isArray(data.orders)){showToast("文件格式不正确");return}var imported=0;for(var order of data.orders){delete order.id;await DB.saveOrder(order);imported++}showToast("导入成功："+imported+"条订单");if(document.getElementById("page-history").classList.contains("active"))loadHistory();if(document.getElementById("page-stats").classList.contains("active"))loadStats()}catch(e){console.error("Import error:",e);showToast("导入失败，文件格式有误")}event.target.value=""}
+function populatePresetVeggies(){var h="";PRESET_VEGGIES.forEach(function(v){h+='<button class="preset-chip" data-name="'+escHtml(v)+'">'+escHtml(v)+'</button>'});dom.presetVeggies.innerHTML=h;dom.presetVeggies.querySelectorAll(".preset-chip").forEach(function(chip){chip.addEventListener("click",function(){dom.inputVegName.value=chip.dataset.name;dom.presetVeggies.querySelectorAll(".preset-chip").forEach(function(c){c.classList.toggle("selected",c===chip)});dom.inputWeight.focus()})})}
+async function loadShareView(customer,date){var app=document.getElementById("app");app.style.display="none";var share=document.getElementById("page-share");share.classList.add("active");share.style.display="block";document.getElementById("share-customer").textContent=customer;document.getElementById("share-date").textContent=date;try{var orders=await DB.getCustomerDateOrders(customer,date);var ai=[];orders.forEach(function(o){ai=ai.concat(o.items||[])});var tbody=document.getElementById("share-items-body");var h="";var t=0;ai.forEach(function(it){var s=(it.weight||0)*(it.unitPrice||0);t+=s;h+="<tr><td>"+escHtml(it.name)+'</td><td class="num">'+fmtNum(it.weight)+"斤</td><td>"+fmtNum(it.unitPrice)+"元</td><td>"+fmtNum(s)+"元</td></tr>"});tbody.innerHTML=h;document.getElementById("share-total").textContent=fmtNum(t)}catch(e){}}
+
+async function genImg(orders,isMonth){var W=440;var pd=16;var nl=pd;var cl=160;var pc=285;var tr=W-pd;var lh=22;var cy=30;var canvas=document.createElement("canvas");canvas.width=W;var x=canvas.getContext("2d");var tl=0;if(isMonth){orders.forEach(function(o){tl+=2+(o.items||[]).length})}else{orders.forEach(function(o){tl+=(o.items||[]).length})}canvas.height=cy+tl*lh+70+pd*2;var H=canvas.height;x.fillStyle="#fff";x.fillRect(0,0,W,H);x.fillStyle="#2E7D32";x.font="bold 18px sans-serif";x.textAlign="center";x.fillText(isMonth?"送货单（月汇总）":"送货单",W/2,cy);cy+=28;if(orders.length>0){x.fillStyle="#666";x.font="13px sans-serif";x.fillText("客户："+(orders[0].customer||""),W/2,cy);cy+=18}x.fillStyle="#333";x.font="bold 12px sans-serif";x.textAlign="left";x.fillText("品名",nl,cy);x.textAlign="center";x.fillText("重量",cl,cy);x.fillText("单价",pc,cy);x.textAlign="right";x.fillText("金额",tr,cy);cy+=4;x.strokeStyle="#2E7D32";x.lineWidth=1.5;x.beginPath();x.moveTo(pd,cy);x.lineTo(W-pd,cy);x.stroke();cy+=18;var gt=0;x.font="13px sans-serif";if(isMonth){orders.forEach(function(o){x.fillStyle="#2E7D32";x.font="bold 12px sans-serif";x.textAlign="left";x.fillText(o.date||"",nl,cy);cy+=lh;x.font="13px sans-serif";x.fillStyle="#333";(o.items||[]).forEach(function(it){var sub=(it.weight||0)*(it.unitPrice||0);gt+=sub;x.textAlign="left";x.fillText(it.name||"",nl,cy);x.textAlign="center";x.fillText(fmtNum(it.weight)+"斤",cl,cy);x.fillText(fmtNum(it.unitPrice)+"元",pc,cy);x.textAlign="right";x.fillText(fmtNum(sub)+"元",tr,cy);cy+=lh});var dt=(o.items||[]).reduce(function(s,it){return s+(it.weight||0)*(it.unitPrice||0)},0);x.fillStyle="#999";x.font="11px sans-serif";x.textAlign="right";x.fillText("小计："+fmtNum(dt)+"元",tr,cy);cy+=lh})}else{var items=[];orders.forEach(function(o){(o.items||[]).forEach(function(it){items.push(it)})});items.forEach(function(it){var sub=(it.weight||0)*(it.unitPrice||0);gt+=sub;x.textAlign="left";x.fillText(it.name||"",nl,cy);x.textAlign="center";x.fillText(fmtNum(it.weight)+"斤",cl,cy);x.fillText(fmtNum(it.unitPrice)+"元",pc,cy);x.textAlign="right";x.fillText(fmtNum(sub)+"元",tr,cy);cy+=lh})}x.strokeStyle="#ddd";x.lineWidth=1;x.beginPath();x.moveTo(pd+8,cy);x.lineTo(W-pd-8,cy);x.stroke();x.fillStyle="#2E7D32";x.font="bold 16px sans-serif";x.textAlign="right";x.fillText("合计："+fmtNum(gt)+"元",tr,cy+28);x.fillStyle="#bbb";x.font="12px sans-serif";x.textAlign="center";x.fillText("── 菜农记账 ──",W/2,H-pd-6);return new Promise(function(r){canvas.toBlob(function(b){r(b)},"image/png")})}
+async function copyImg(blob){try{await navigator.clipboard.write([new ClipboardItem({"image/png":blob})]);return true}catch(e){return false}}
+
+function init(){var _p=new URLSearchParams(location.search);if(_p.get("v")&&_p.get("d")){loadShareView(_p.get("v"),_p.get("d"));return}dom.inputDate.value=todayStr();loadCustomerAutocomplete();populatePresetVeggies();dom.navItems.forEach(function(item){item.addEventListener("click",function(){switchPage(item.dataset.page)})});dom.btnAddItem.addEventListener("click",openAddModal);dom.modalClose.addEventListener("click",function(){editingIndex=-1;dom.btnConfirmAdd.textContent="确认添加";hideModal(dom.modal)});dom.btnCancelAdd.addEventListener("click",function(){editingIndex=-1;dom.btnConfirmAdd.textContent="确认添加";hideModal(dom.modal)});dom.modal.addEventListener("click",function(e){if(e.target===dom.modal){editingIndex=-1;dom.btnConfirmAdd.textContent="确认添加";hideModal(dom.modal)}});function uc(){dom.calcSubtotal.textContent=fmtNum((parseFloat(dom.inputWeight.value)||0)*(parseFloat(dom.inputPrice.value)||0))}dom.inputWeight.addEventListener("input",uc);dom.inputPrice.addEventListener("input",uc);dom.btnConfirmAdd.addEventListener("click",confirmAddItem);dom.inputPrice.addEventListener("keydown",function(e){if(e.key==="Enter")confirmAddItem()});dom.btnSaveOrder.addEventListener("click",saveCurrentOrder);var st;dom.historySearch.addEventListener("input",function(){clearTimeout(st);st=setTimeout(function(){loadHistory(dom.historySearch.value)},300)});dom.detailClose.addEventListener("click",function(){hideModal(dom.detailModal)});dom.detailModal.addEventListener("click",function(e){if(e.target===dom.detailModal)hideModal(dom.detailModal)});dom.inputCustomer.addEventListener("blur",onCustomerChanged);dom.inputCustomer.addEventListener("change",onCustomerChanged);dom.btnLoadItems.addEventListener("click",function(){var oid=dom.loadSuggestion.dataset.orderId;if(oid)loadPreviousItemsFromOrder(oid)});dom.btnDismissSuggestion.addEventListener("click",hideLoadSuggestion);dom.btnExport.addEventListener("click",exportData);dom.btnImport.addEventListener("click",function(){dom.fileInput.click()});dom.fileInput.addEventListener("change",importData);Sync.supabaseTest().then(function(ok){if(ok){dom.syncStatus.textContent="已连接";dom.syncStatus.className="sync-badge sync-active";dom.syncInfo.textContent="Supabase 云端就绪"}else{dom.syncStatus.textContent="未连接";dom.syncInfo.textContent="Supabase 不可用，仅本地模式"}});dom.editClose.addEventListener("click",function(){hideModal(dom.editModal);editingOrderId=null});dom.btnEditCancel.addEventListener("click",function(){hideModal(dom.editModal);editingOrderId=null});dom.btnEditSave.addEventListener("click",saveEditOrder);dom.btnEditAddItem.addEventListener("click",addEditItem);dom.editModal.addEventListener("click",function(e){if(e.target===dom.editModal){hideModal(dom.editModal);editingOrderId=null}});dom.filterBtns.forEach(function(b){b.addEventListener("click",function(){dom.filterBtns.forEach(function(x){x.classList.remove("active")});b.classList.add("active");var f=b.dataset.filter;currentStatsFilter=f;if(f==="custom"){dom.customRange.style.display="flex"}else{dom.customRange.style.display="none";loadStats(f)}})});dom.btnFilterApply.addEventListener("click",function(){loadStats("custom")});renderItems()}
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init)}else{init()}
 })();
+
+
