@@ -124,6 +124,8 @@ async function getCustomerNames() {
 }
 
 
+function normalizeCustomer(n){if(!n)return n;return n.replace(/[\uff01-\uff5e]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xfee0)});}
+
 // ==================== Supabase 浜戝悓姝?====================
 const SUPABASE_URL = "https://hsbktyabuotitcsyruwy.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzYmt0eWFidW90aXRjc3lydXd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MjY0MDcsImV4cCI6MjA5NzAwMjQwN30.VWYseQu-Nq_tLQE0zF4E_TeDYVXrgF44JESrf5f4vDA";
@@ -151,8 +153,8 @@ async function supabaseGetCustomerDateOrders(customer, date) {
 async function getCustomerDateOrders(customer, date) {
   var all = await getAllOrders();
   return all.filter(function(o) {
-    var nko = typeof normalizeCustomer === "function" ? normalizeCustomer(o.customer || "") : (o.customer || "");
-    var nkc = typeof normalizeCustomer === "function" ? normalizeCustomer(customer) : customer;
+    var nko = normalizeCustomer(o.customer || "");
+    var nkc = normalizeCustomer(customer);
     return (o.customer === customer || nko === nkc) && o.date === date;
   });
 }
