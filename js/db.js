@@ -34,31 +34,44 @@ async function saveOrder(order) {
 }
 
 async function getAllOrders() {
-  var idxOrders = [];
   try {
-    var db = await openDB();
-    idxOrders = await new Promise(function(resolve, reject) {
-      var tx = db.transaction(STORE_NAME, "readonly");
-      var store = tx.objectStore(STORE_NAME);
-      var req = store.getAll();
-      req.onsuccess = function() { resolve(req.result || []); };
-      req.onerror = function() { reject(req.error); };
-      tx.oncomplete = function() { db.close(); };
-    });
-  } catch(e) {}
-  var cloudOrders = [];
-  try { cloudOrders = await supabaseGetOrders(); } catch(e) {}
-  var map = {};
-  cloudOrders.forEach(function(o) { map[o.id] = o; });
-  idxOrders.forEach(function(o) {
-    if (!map[o.id] || (o.createdAt || 0) > (map[o.id].createdAt || 0)) {
-      map[o.id] = o;
+    var co = await supabaseGetOrders();
+    if (co.length > 0) {
+      try {
+        var db = await openDB();
+        var tx = db.transaction(STORE_NAME, "readwrite");
+        var store = tx.objectStore(STORE_NAME);
+        var allKeys = await new Promise(function(resolve) {
+          var req = store.getAllKeys();
+          req.onsuccess = function() { resolve(req.result || []); };
+          req.onerror = function() { resolve([]); };
+        });
+        var cloudIds = {};
+        co.forEach(function(o) { cloudIds[o.id] = true; });
+        allKeys.forEach(function(k) {
+          if (!cloudIds[k]) store.delete(k);
+        });
+        co.forEach(function(o) { store.put(o); });
+        tx.oncomplete = function() { db.close(); };
+      } catch(e) {}
+      return co;
     }
+  } catch(e) { console.warn("Supabase:", e.message); }
+  var db2 = await openDB();
+  return new Promise(function(resolve, reject) {
+    var tx2 = db2.transaction(STORE_NAME, "readonly");
+    var store2 = tx2.objectStore(STORE_NAME);
+    var req2 = store2.getAll();
+    req2.onsuccess = function() {
+      var orders = req2.result || [];
+      orders.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+      resolve(orders);
+    };
+    req2.onerror = function() { reject(req2.error); };
+    tx2.oncomplete = function() { db2.close(); };
   });
-  var merged = Object.values(map);
-  merged.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
-  return merged;
 }
+
 async function getOrdersByDateRange(dateFrom, dateTo) {
   const all = await getAllOrders();
   return all.filter(o => o.date >= dateFrom && o.date <= dateTo);
