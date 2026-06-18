@@ -34,22 +34,31 @@ async function saveOrder(order) {
 }
 
 async function getAllOrders() {
-  try { var co = await supabaseGetOrders(); if (co.length > 0) return co; } catch(e) { console.warn("Supabase:", e.message); }
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.getAll();
-    req.onsuccess = () => {
-      const orders = req.result || [];
-      orders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      resolve(orders);
-    };
-    req.onerror = () => reject(req.error);
-    tx.oncomplete = () => db.close();
+  var idxOrders = [];
+  try {
+    var db = await openDB();
+    idxOrders = await new Promise(function(resolve, reject) {
+      var tx = db.transaction(STORE_NAME, "readonly");
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.getAll();
+      req.onsuccess = function() { resolve(req.result || []); };
+      req.onerror = function() { reject(req.error); };
+      tx.oncomplete = function() { db.close(); };
+    });
+  } catch(e) {}
+  var cloudOrders = [];
+  try { cloudOrders = await supabaseGetOrders(); } catch(e) {}
+  var map = {};
+  cloudOrders.forEach(function(o) { map[o.id] = o; });
+  idxOrders.forEach(function(o) {
+    if (!map[o.id] || (o.createdAt || 0) > (map[o.id].createdAt || 0)) {
+      map[o.id] = o;
+    }
   });
+  var merged = Object.values(map);
+  merged.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  return merged;
 }
-
 async function getOrdersByDateRange(dateFrom, dateTo) {
   const all = await getAllOrders();
   return all.filter(o => o.date >= dateFrom && o.date <= dateTo);
@@ -162,6 +171,7 @@ async function supabaseTest() { try { await supabaseFetch("GET", "orders?select=
 window.Sync = { supabaseSaveOrder, supabaseGetOrders, supabaseDeleteOrder, supabaseTest };
 
 window.DB = { saveOrder, updateOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders, getLastOrderByCustomer, getCustomerNames, getCustomerDateOrders, getCustomerMonthOrders };
+
 
 
 
