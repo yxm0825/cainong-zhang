@@ -822,3 +822,4 @@ input:focus, button:focus { outline: none; }
 
 /* ============ Edit Modal ============ */
 .modal-edit{max-width:460px;width:95%;max-height:90vh;overflow-y:auto}.edit-item-row{display:flex;align-items:center;gap:4px;margin-bottom:6px;padding:4px;background:#FAFAFA;border-radius:6px}.edit-item-row input{border:1.5px solid var(--border);border-radius:4px;padding:6px 4px;font-size:13px;background:white}.edit-item-sub{font-weight:600;color:var(--green-800);font-size:13px;min-width:55px;text-align:right}.btn-edit-del{background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:4px 6px}.edit-add-row{display:flex;align-items:center;gap:4px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}.edit-add-row input{border:1.5px solid var(--border);border-radius:4px;padding:6px 4px;font-size:13px;background:white}
+.ver-footer{text-align:center;padding:6px;font-size:11px;color:#bbb}

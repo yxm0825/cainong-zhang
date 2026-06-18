@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="菜农记账">
-<link rel="manifest" href="manifest.json?v=31">
+<link rel="manifest" href="manifest.json?v=32">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>菜农记账</title>
-<meta name="version" content="v31">
-<link rel="stylesheet" href="css/style.css?v=31">
+<meta name="version" content="v32">
+<link rel="stylesheet" href="css/style.css?v=32">
 </head>
 <body>
 <div id="password-screen">
@@ -289,10 +289,11 @@
 <script>
 (function(){var h="62dc22ad2998cc534f7cd1474695cb4f05024065f1b7cebb0d1165dbe2a3f890";var s=document.getElementById("password-screen");var i=document.getElementById("pwd-input");var e=document.getElementById("pwd-error");var b=document.getElementById("pwd-btn");if(new URLSearchParams(location.search).get("v")||localStorage.getItem("ca")===h){s.style.display="none";return;}function chk(){var v=i.value;if(v.length!==4)return;crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(buf){var a=Array.from(new Uint8Array(buf)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");if(a===h){localStorage.setItem("ca",h);s.style.display="none";}else{e.style.display="block";i.value="";i.focus();setTimeout(function(){e.style.display="none";},2000);}});}i.addEventListener("keypress",function(ev){if(ev.key==="Enter")chk();});b.addEventListener("click",chk);i.focus();})();
 </script>
-    <script src="js/db.js?v=31"></script>
-<script src="js/app.js?v=31"></script>
+    <script src="js/db.js?v=32"></script>
+<script src="js/app.js?v=32"></script>
 </body>
 </html>
+
 
 
 

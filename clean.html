@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>菜农记账 - 更新</title><style>
+body{font-family:sans-serif;background:#2E7D32;color:#fff;text-align:center;padding:40px 20px}
+h1{font-size:22px;margin-bottom:10px}p{font-size:15px;opacity:.8;margin-bottom:30px}
+.btn{background:#fff;color:#2E7D32;border:none;padding:14px 40px;font-size:18px;border-radius:8px;cursor:pointer;font-weight:700}
+.msg{margin-top:20px;font-size:14px;opacity:.6}
+</style></head><body>
+<h1>🔄 菜农记账更新工具</h1>
+<p>如果 App 显示异常，点下面的按钮刷新</p>
+<button class="btn" id="btn">一键更新</button>
+<div class="msg" id="msg"></div>
+<script>
+document.getElementById("btn").addEventListener("click",async function(){
+  var m=document.getElementById("msg");m.textContent="正在清理...";
+  try{
+    if("serviceWorker" in navigator){
+      var rs=await navigator.serviceWorker.getRegistrations();
+      for(var r of rs)await r.unregister();
+    }
+    var ks=await caches.keys();
+    for(var k of ks)await caches.delete(k);
+    m.textContent="清理完成，正在打开 App...";
+    setTimeout(function(){location.href="index.html?v="+Date.now()},500);
+  }catch(e){m.textContent="出错："+e.message}
+});
+</script></body></html>
