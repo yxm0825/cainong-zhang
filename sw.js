@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'veggie-ledger-v26';
+﻿const CACHE_NAME = 'veggie-ledger-v27';
 const ASSETS = [
   '.',
   'index.html',
@@ -29,6 +29,8 @@ self.addEventListener('activate', (event) => {
     })
   );
   self.clients.claim();
+
+self.addEventListener('message',function(event){if(event.data&&event.data.type==='SKIP_WAITING'){self.skipWaiting()}});
 });
 
 self.addEventListener('fetch', (event) => {
@@ -53,6 +55,7 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
 
 
 
