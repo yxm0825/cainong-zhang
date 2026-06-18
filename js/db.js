@@ -122,7 +122,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 async function supabaseFetch(method, path, body) {
   const r = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
     method,
-    headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", "Prefer": "return=representation" },
+    headers: (function(){var h={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY,Prefer:"return=representation"};if(body)h["Content-Type"]="application/json";return h})(),
     body: body ? JSON.stringify(body) : undefined
   });
   if (!r.ok) throw new Error("Supabase " + r.status);
@@ -131,7 +131,7 @@ async function supabaseFetch(method, path, body) {
 function orderToRow(o) { return { customer: o.customer, date: o.date, items: o.items, grand_total: o.grandTotal, created_at: o.createdAt }; }
 function rowToOrder(r) { return { id: r.id, customer: r.customer, date: r.date, items: r.items, grandTotal: r.grand_total, createdAt: r.created_at }; }
 async function supabaseSaveOrder(order) { var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; }
-async function supabaseUpdateOrder(order) { await supabaseFetch("DELETE", "orders?id=eq." + order.id); var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; }
+async function supabaseUpdateOrder(order) { try { await supabaseFetch("PATCH", "orders?id=eq." + order.id, orderToRow(order)); } catch(e) { try { await supabaseFetch("DELETE", "orders?id=eq." + order.id); var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; } catch(e2) { throw new Error("Update failed: "+e2.message); } } }
 async function supabaseGetOrders() { var rows = await supabaseFetch("GET", "orders?select=*&order=created_at.desc"); return (rows || []).map(rowToOrder); }
 
 async function supabaseGetCustomerDateOrders(customer, date) {
@@ -162,5 +162,6 @@ async function supabaseTest() { try { await supabaseFetch("GET", "orders?select=
 window.Sync = { supabaseSaveOrder, supabaseGetOrders, supabaseDeleteOrder, supabaseTest };
 
 window.DB = { saveOrder, updateOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders, getLastOrderByCustomer, getCustomerNames, getCustomerDateOrders, getCustomerMonthOrders };
+
 
 
