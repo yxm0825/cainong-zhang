@@ -149,7 +149,12 @@ async function supabaseGetCustomerDateOrders(customer, date) {
   return (rows || []).map(rowToOrder);
 }
 async function getCustomerDateOrders(customer, date) {
-  return await supabaseGetCustomerDateOrders(customer, date);
+  var all = await getAllOrders();
+  return all.filter(function(o) {
+    var nko = typeof normalizeCustomer === "function" ? normalizeCustomer(o.customer || "") : (o.customer || "");
+    var nkc = typeof normalizeCustomer === "function" ? normalizeCustomer(customer) : customer;
+    return (o.customer === customer || nko === nkc) && o.date === date;
+  });
 }
 
 async function supabaseGetCustomerMonthOrders(customer, yearMonth) {
@@ -164,7 +169,13 @@ async function supabaseGetCustomerMonthOrders(customer, yearMonth) {
   return (rows || []).map(rowToOrder);
 }
 async function getCustomerMonthOrders(customer, yearMonth) {
-  return await supabaseGetCustomerMonthOrders(customer, yearMonth);
+  var all = await getAllOrders();
+  return all.filter(function(o) {
+    var nko = typeof normalizeCustomer === "function" ? normalizeCustomer(o.customer || "") : (o.customer || "");
+    var nkc = typeof normalizeCustomer === "function" ? normalizeCustomer(customer) : customer;
+    var ym = (o.date || "").substring(0, 7);
+    return (o.customer === customer || nko === nkc) && ym === yearMonth;
+  });
 }
 async function supabaseDeleteOrder(id) { await supabaseFetch("DELETE", "orders?id=eq." + id); }
 async function supabaseTest() { try { await supabaseFetch("GET", "orders?select=count&limit=1"); return true; } catch(e) { return false; } }
