@@ -64,7 +64,7 @@ async function getOrdersByDateRange(dateFrom, dateTo) {
   return all.filter(o => o.date >= dateFrom && o.date <= dateTo);
 }
 
-async function updateOrder(order) { try { await supabaseUpdateOrder(order); } catch(e) { console.warn("Supabase update:", e.message); } var db = await openDB(); return new Promise(function(resolve, reject) { var tx = db.transaction(STORE_NAME, "readwrite"); var store = tx.objectStore(STORE_NAME); var req = store.put(order); req.onsuccess = function() { resolve(req.result); }; req.onerror = function() { reject(req.error); }; tx.oncomplete = function() { db.close(); }; }); }
+async function updateOrder(order) { var oldId = order.id; try { await supabaseUpdateOrder(order); } catch(e) { console.warn("Supabase update:", e.message); } var db = await openDB(); return new Promise(function(resolve, reject) { var tx = db.transaction(STORE_NAME, "readwrite"); var store = tx.objectStore(STORE_NAME); if (order.id !== oldId) { store.delete(oldId); } var req = store.put(order); req.onsuccess = function() { resolve(req.result); }; req.onerror = function() { reject(req.error); }; tx.oncomplete = function() { db.close(); }; }); }
 
 async function deleteOrder(id) {
   try { await supabaseDeleteOrder(id); } catch(e) { console.warn("Supabase:", e.message); }
@@ -171,6 +171,7 @@ async function supabaseTest() { try { await supabaseFetch("GET", "orders?select=
 window.Sync = { supabaseSaveOrder, supabaseGetOrders, supabaseDeleteOrder, supabaseTest };
 
 window.DB = { saveOrder, updateOrder, getAllOrders, getOrdersByDateRange, deleteOrder, getStats, searchOrders, getLastOrderByCustomer, getCustomerNames, getCustomerDateOrders, getCustomerMonthOrders };
+
 
 
 
