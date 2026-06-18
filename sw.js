@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'veggie-ledger-v28';
+﻿const CACHE_NAME = 'veggie-ledger-v29';
 const ASSETS = [
   '.',
   'index.html',
@@ -55,6 +55,7 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
 
 
 
