@@ -34,42 +34,29 @@ async function saveOrder(order) {
 }
 
 async function getAllOrders() {
+  var idxOrders = [];
   try {
-    var co = await supabaseGetOrders();
-    if (co.length > 0) {
-      try {
-        var db = await openDB();
-        var tx = db.transaction(STORE_NAME, "readwrite");
-        var store = tx.objectStore(STORE_NAME);
-        var allKeys = await new Promise(function(resolve) {
-          var req = store.getAllKeys();
-          req.onsuccess = function() { resolve(req.result || []); };
-          req.onerror = function() { resolve([]); };
-        });
-        var cloudIds = {};
-        co.forEach(function(o) { cloudIds[o.id] = true; });
-        allKeys.forEach(function(k) {
-          if (!cloudIds[k]) store.delete(k);
-        });
-        co.forEach(function(o) { store.put(o); });
-        tx.oncomplete = function() { db.close(); };
-      } catch(e) {}
-      return co;
-    }
-  } catch(e) { console.warn("Supabase:", e.message); }
-  var db2 = await openDB();
-  return new Promise(function(resolve, reject) {
-    var tx2 = db2.transaction(STORE_NAME, "readonly");
-    var store2 = tx2.objectStore(STORE_NAME);
-    var req2 = store2.getAll();
-    req2.onsuccess = function() {
-      var orders = req2.result || [];
-      orders.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
-      resolve(orders);
-    };
-    req2.onerror = function() { reject(req2.error); };
-    tx2.oncomplete = function() { db2.close(); };
+    var db = await openDB();
+    idxOrders = await new Promise(function(resolve, reject) {
+      var tx = db.transaction(STORE_NAME, "readonly");
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.getAll();
+      req.onsuccess = function() { resolve(req.result || []); };
+      req.onerror = function() { reject(req.error); };
+      tx.oncomplete = function() { db.close(); };
+    });
+  } catch(e) {}
+  var cloudOrders = [];
+  try { cloudOrders = await supabaseGetOrders(); } catch(e) {}
+  var map = {};
+  cloudOrders.forEach(function(o) { map[o.id] = o; });
+  idxOrders.forEach(function(o) {
+    if (!map[o.id]) { map[o.id] = o; }
+    else if ((o.createdAt || 0) > (map[o.id].createdAt || 0)) { map[o.id] = o; }
   });
+  var merged = Object.values(map);
+  merged.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  return merged;
 }
 
 async function getOrdersByDateRange(dateFrom, dateTo) {
@@ -155,7 +142,7 @@ async function supabaseFetch(method, path, body) {
 function orderToRow(o) { return { customer: o.customer, date: o.date, items: o.items, grand_total: o.grandTotal, created_at: o.createdAt }; }
 function rowToOrder(r) { return { id: r.id, customer: r.customer, date: r.date, items: r.items, grandTotal: r.grand_total, createdAt: r.created_at }; }
 async function supabaseSaveOrder(order) { var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; }
-async function supabaseUpdateOrder(order) { try { await supabaseFetch("PATCH", "orders?id=eq." + order.id, orderToRow(order)); } catch(e) { try { await supabaseFetch("DELETE", "orders?id=eq." + order.id); var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; } catch(e2) { throw new Error("Update failed: "+e2.message); } } }
+async function supabaseUpdateOrder(order) { await supabaseFetch("DELETE", "orders?id=eq." + order.id); var rows = await supabaseFetch("POST", "orders", orderToRow(order)); if (rows && rows.length > 0) order.id = rows[0].id; }
 async function supabaseGetOrders() { var rows = await supabaseFetch("GET", "orders?select=*&order=created_at.desc"); return (rows || []).map(rowToOrder); }
 
 async function supabaseGetCustomerDateOrders(customer, date) {
