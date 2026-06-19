@@ -460,11 +460,11 @@ input:focus, button:focus { outline: none; }
   border-bottom: 1px solid var(--border);
 }
 .history-card-date { font-weight: 600; color: var(--text); font-size: 15px; }
-.history-card-customer { font-size: 13px; color: var(--text-secondary); }
+.history-card-customer { font-size: 13px; color: #111; font-weight: 600; }
 .history-card-total {
   font-weight: 700; color: var(--green-800); font-size: 18px;
 }
-.history-card-total small { font-size: 12px; font-weight: 400; color: var(--text-secondary); }
+.history-card-total small { font-size: 12px; font-weight: 400; color: #555; }
 
 .history-card-body {
   padding: 10px 16px;
@@ -480,9 +480,9 @@ input:focus, button:focus { outline: none; }
   border-bottom: 1px dashed var(--border);
 }
 .history-item-row:last-child { border-bottom: none; }
-.history-item-name { font-weight: 500; }
-.history-item-detail { color: var(--text-secondary); font-size: 13px; }
-.history-item-subtotal { font-weight: 600; color: var(--text); }
+.history-item-name { font-weight: 700; color: #111; }
+.history-item-detail { color: #000; font-size: 14px; font-weight: 700; }
+.history-item-subtotal { font-weight: 700; color: #111; }
 
 .history-card-actions {
   display: flex;
@@ -823,4 +823,7 @@ input:focus, button:focus { outline: none; }
 /* ============ Edit Modal ============ */
 .modal-edit{max-width:460px;width:95%;max-height:90vh;overflow-y:auto}.edit-item-row{display:flex;align-items:center;gap:4px;margin-bottom:6px;padding:4px;background:#FAFAFA;border-radius:6px}.edit-item-row input{border:1.5px solid var(--border);border-radius:4px;padding:6px 4px;font-size:13px;background:white}.edit-item-sub{font-weight:600;color:var(--green-800);font-size:13px;min-width:55px;text-align:right}.btn-edit-del{background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:4px 6px}.edit-add-row{display:flex;align-items:center;gap:4px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}.edit-add-row input{border:1.5px solid var(--border);border-radius:4px;padding:6px 4px;font-size:13px;background:white}
 .ver-footer{text-align:center;padding:6px;font-size:11px;color:#888;font-size:13px;padding:10px}
+
+
+
 
