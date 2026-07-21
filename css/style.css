@@ -362,7 +362,7 @@ input:focus, button:focus { outline: none; }
 .form-group { margin-bottom: 16px; }
 .form-group label {
   display: block;
-  font-size: 16px;
+  font-size: 32px;
   font-weight: 500;
   color: #444;
   margin-bottom: 6px;
@@ -372,7 +372,7 @@ input:focus, button:focus { outline: none; }
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  font-size: 22px;
+  font-size: 44px;
   font-weight: 600;
   color: #000;
   transition: border-color 0.2s;
